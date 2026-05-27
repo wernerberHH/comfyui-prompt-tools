@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.1] — 2026-05-28
+
+### Added
+
+- Project icon (`docs/ComfyUIToolsLogo.png`, 400×400 PNG) referenced
+  from `pyproject.toml` `[tool.comfy].Icon` so it displays on the
+  Comfy Registry node page.
+
 ## [1.1.0] — 2026-05-27
 
 First public release. The v1.0 internal tag was cleaned up for public

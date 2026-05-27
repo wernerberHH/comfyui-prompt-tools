@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "comfyui-prompt-tools"
-version = "1.1.0"
+version = "1.1.1"
 description = "LLM-powered prompt-engineering tools for ComfyUI (PromptHelper, VisionPromptHelper, PromptComposer, TextMux)"
 readme = "README.md"
 license = { text = "MIT" }
@@ -58,6 +58,7 @@ Changelog  = "https://github.com/wernerberHH/comfyui-prompt-tools/blob/main/CHAN
 [tool.comfy]
 PublisherId = "wernerberhh"
 DisplayName = "Prompt Tools"
+Icon = "https://raw.githubusercontent.com/wernerberHH/comfyui-prompt-tools/main/docs/ComfyUIToolsLogo.png"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
