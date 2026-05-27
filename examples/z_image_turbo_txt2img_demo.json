@@ -1,0 +1,803 @@
+{
+  "id": "e07a8e40-7571-4755-89cf-8a3327dda0a8",
+  "revision": 0,
+  "last_node_id": 31,
+  "last_link_id": 80,
+  "nodes": [
+    {
+      "id": 2,
+      "type": "ModelSamplingAuraFlow",
+      "pos": [
+        115.71428571428574,
+        15.714285714285728
+      ],
+      "size": [
+        315,
+        58
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            2
+          ]
+        }
+      ],
+      "title": "⚡ Shift (7.0)",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "ModelSamplingAuraFlow"
+      },
+      "widgets_values": [
+        7
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 23,
+      "type": "Note",
+      "pos": [
+        92.6655663410861,
+        -671.4872593177482
+      ],
+      "size": [
+        407.4438815065987,
+        475.586815870548
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "Z-Image Turbo is trained at ~1 megapixel. Common sizes:\n\nPortrait (vertical):\n  768 × 1024  — Standard portrait\n  768 × 1152  — Extended portrait\n  768 × 1344  — Slim vertical\n  832 × 1216  — Sweet spot for full body\n\nLandscape (horizontal):\n  1024 × 768  — Standard landscape\n  1152 × 768  — Wider landscape\n  1216 × 832  — Cinematic\n  1344 × 768  — Ultra-wide\n\nSquare:\n  1024 × 1024 — Standard\n\n16:9 Cinematic:\n  1280 × 720  — HD\n  1360 × 768  — Wide\n\nExperimental (up to ~2 MP, also works):\n  1024 × 1536 — Large portrait\n  1200 × 1600 — Near 3:4\n  1536 × 1024 — Large landscape\n\nRules:\n  - Always multiples of 32 (ideally) or at least 8\n  - ~1 megapixel = reliably good quality"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 10,
+      "type": "ConditioningZeroOut",
+      "pos": [
+        574.5208583045576,
+        345.80920149103457
+      ],
+      "size": [
+        300,
+        58
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            16
+          ]
+        }
+      ],
+      "title": "❌ Negative (Zero)",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "ConditioningZeroOut"
+      },
+      "widgets_values": [],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 9,
+      "type": "CLIPTextEncode",
+      "pos": [
+        539.84701335955,
+        69.48934841412711
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 71
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": 78
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            15,
+            20
+          ]
+        }
+      ],
+      "title": "✏️ Positive Prompt",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        ""
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 1,
+      "type": "UNETLoader",
+      "pos": [
+        108.57142857142858,
+        -140
+      ],
+      "size": [
+        400,
+        82
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            1
+          ]
+        }
+      ],
+      "title": "🧠 Z-Image Turbo Model",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "UNETLoader"
+      },
+      "widgets_values": [
+        "z_image_turbo_bf16.safetensors",
+        "default"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 4,
+      "type": "CLIPLoader",
+      "pos": [
+        109.17334283639094,
+        123.01303507304902
+      ],
+      "size": [
+        400,
+        106
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "slot_index": 0,
+          "links": [
+            4
+          ]
+        }
+      ],
+      "title": "📝 Qwen3 4B Text Encoder",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "CLIPLoader"
+      },
+      "widgets_values": [
+        "qwen_3_4b.safetensors",
+        "qwen_image",
+        "default"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 5,
+      "type": "VAELoader",
+      "pos": [
+        117.68317494581365,
+        516.7073148206588
+      ],
+      "size": [
+        400,
+        58
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "slot_index": 0,
+          "links": [
+            10
+          ]
+        }
+      ],
+      "title": "🎨 FLUX VAE",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "ae.safetensors"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 11,
+      "type": "EmptySD3LatentImage",
+      "pos": [
+        571.8988594662569,
+        467.7248788980093
+      ],
+      "size": [
+        315,
+        106
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "slot_index": 0,
+          "links": [
+            17
+          ]
+        }
+      ],
+      "title": "📐 Canvas (832x1216 Portrait)",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "EmptySD3LatentImage"
+      },
+      "widgets_values": [
+        832,
+        1216,
+        1
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 6,
+      "type": "PromptHelper",
+      "pos": [
+        528.9849694301078,
+        -633.3083268694348
+      ],
+      "size": [
+        426.61091384539225,
+        654
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "enhanced_prompt",
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            12
+          ]
+        },
+        {
+          "name": "original_prompt",
+          "type": "STRING",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "title": "🤖 PromptHelper (Z-Image)",
+      "properties": {
+        "aux_id": "wernerberHH/comfyui-prompt-tools",
+        "ver": "caa001ee43f0a2d312431bd181755610ef6e7864",
+        "Node name for S&R": "PromptHelper"
+      },
+      "widgets_values": [
+        "A young woman is sitting in a cafe at times square",
+        "Z-Image Text-to-Image",
+        "openai",
+        "https://api.openai.com/v1",
+        "[openai] gpt-4o-mini",
+        0.3,
+        "30s",
+        "You are a prompt engineer for Z-Image Turbo, an ultra-fast photorealistic AI image model by Alibaba. The user describes a scene. You create a highly detailed, natural-language prompt.\n\nRules:\n- Write in natural language like describing a real photograph, NOT comma-separated tags\n- Be extremely detailed — Z-Image thrives on long, rich descriptions (300-500 words ideal)\n- Describe the scene like a cinematographer: camera angle, lens, focal length, depth of field\n- Include precise lighting: direction, color temperature, quality (hard/soft), time of day\n- Describe materials and textures explicitly: fabric weave, skin texture with pores and imperfections, surface reflections\n- For people: describe clothing in detail, expression, body language, age, build — but always naturally\n- Include atmosphere and mood: emotional tone, ambient sounds implied by setting, weather\n- Add technical markers: 'professional photography, raw photo, 8k resolution, ultra detailed'\n- Mention specific camera models for style: 'Canon R5 with 85mm f/1.4' for portraits, 'Sony A7IV with 24mm f/1.4' for wide scenes\n- The user may write in any language (e.g. German). ALWAYS translate to English and enhance.\n- Output must be in English only, plain text only, no markdown or formatting\n- Output ONLY the enhanced prompt, nothing else — no preamble, no explanations",
+        "European\nEast Asian\nSouth Asian\nSoutheast Asian\nLatin American\nAfrican\nMiddle Eastern\nMixed heritage",
+        "22-40",
+        "confident\nplayful\nserene\nintense\nthoughtful\nwarm\nmysterious\nrelaxed",
+        "long straight\nshoulder-length wavy\nshort pixie cut\nlong curly\nbraided\nbob cut\nlong wavy\nshort textured",
+        "harsh midday sun with deep shadows",
+        "quiet cobblestone street in old European town",
+        "jeans and black satin blouse"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 7,
+      "type": "ShowText|pysssss",
+      "pos": [
+        983.8996085312951,
+        -639.6750353811121
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "shape": 6,
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            13
+          ]
+        }
+      ],
+      "title": "📋 Enhanced Prompt (Preview)",
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "1.2.5",
+        "Node name for S&R": "ShowText|pysssss"
+      },
+      "widgets_values": [
+        "A young woman sits at a small table in a bustling café in Times Square, her relaxed posture suggesting she’s enjoying a moment of solitude amidst the vibrant chaos. She wears a stylish, fitted denim jacket over a light sweater, paired with chic ankle boots that complement her casual yet trendy look. The warm afternoon sunlight filters through the café windows, casting a soft glow on her natural skin texture, highlighting the lively atmosphere outside. The background is filled with colorful billboards and the blurred movement of pedestrians, captured with sharp focus and ultra-detailed clarity, creating a photorealistic scene that immerses the viewer in the energy of the city."
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 8,
+      "type": "TextMux",
+      "pos": [
+        984.2857142857143,
+        -365.7142857142858
+      ],
+      "size": [
+        412.1428571428571,
+        204.8571428571429
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "ai_text",
+          "shape": 7,
+          "type": "STRING",
+          "link": 13
+        }
+      ],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            78
+          ]
+        }
+      ],
+      "title": "🔀 AI/Manual Switch",
+      "properties": {
+        "aux_id": "wernerberHH/comfyui-prompt-tools",
+        "ver": "caa001ee43f0a2d312431bd181755610ef6e7864",
+        "Node name for S&R": "TextMux"
+      },
+      "widgets_values": [
+        "",
+        "AI (PromptHelper)"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 12,
+      "type": "KSampler",
+      "pos": [
+        1004.8335800271832,
+        -101.34204546690758
+      ],
+      "size": [
+        315,
+        262
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 72
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 20
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 16
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 17
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "slot_index": 0,
+          "links": [
+            18
+          ]
+        }
+      ],
+      "title": "🎲 KSampler (8 Steps, CFG 1.0)",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        425648309931665,
+        "randomize",
+        8,
+        1,
+        "euler",
+        "simple",
+        1
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 13,
+      "type": "VAEDecode",
+      "pos": [
+        1023.3416401279283,
+        221.8648355794273
+      ],
+      "size": [
+        210,
+        46
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 18
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            73
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "VAEDecode"
+      },
+      "widgets_values": [],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 14,
+      "type": "SaveImage",
+      "pos": [
+        1447.3507876928395,
+        -213.9550457683472
+      ],
+      "size": [
+        315,
+        270
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 73
+        }
+      ],
+      "outputs": [],
+      "title": "💾 Save Output",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "z_image/ZImage"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 3,
+      "type": "LoraLoader",
+      "pos": [
+        110.9856936487396,
+        316.15994757276064
+      ],
+      "size": [
+        400,
+        126
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 2
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            72
+          ]
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "slot_index": 1,
+          "links": [
+            71
+          ]
+        }
+      ],
+      "title": "🔌 LoRA (Ctrl+B to enable)",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.5",
+        "Node name for S&R": "LoraLoader"
+      },
+      "widgets_values": [
+        "z-image/Z-Detail-Slider.safetensors",
+        1,
+        1
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "MODEL"
+    ],
+    [
+      10,
+      5,
+      0,
+      13,
+      1,
+      "VAE"
+    ],
+    [
+      12,
+      6,
+      0,
+      7,
+      0,
+      "STRING"
+    ],
+    [
+      13,
+      7,
+      0,
+      8,
+      0,
+      "STRING"
+    ],
+    [
+      15,
+      9,
+      0,
+      10,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      16,
+      10,
+      0,
+      12,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      17,
+      11,
+      0,
+      12,
+      3,
+      "LATENT"
+    ],
+    [
+      18,
+      12,
+      0,
+      13,
+      0,
+      "LATENT"
+    ],
+    [
+      20,
+      9,
+      0,
+      12,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      2,
+      2,
+      0,
+      3,
+      0,
+      "MODEL"
+    ],
+    [
+      4,
+      4,
+      0,
+      3,
+      1,
+      "CLIP"
+    ],
+    [
+      71,
+      3,
+      1,
+      9,
+      0,
+      "CLIP"
+    ],
+    [
+      72,
+      3,
+      0,
+      12,
+      0,
+      "MODEL"
+    ],
+    [
+      73,
+      13,
+      0,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      78,
+      8,
+      0,
+      9,
+      1,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6303940863128894,
+      "offset": [
+        572.8337974602618,
+        837.7611708069417
+      ]
+    },
+    "tag_data": {},
+    "frontendVersion": "1.43.18"
+  },
+  "version": 0.4
+}

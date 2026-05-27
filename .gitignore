@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local backups (these existed in the old monolithic repo)
+*.bak
+*.bak-*
+*.bak.*
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/
+
+# v0.4 — local endpoints config (only .example is committed)
+config/endpoints.yaml
+config/api_keys.yaml
+
+# v1.1 — user-editable system prompts. Templates ship as `.txt.example`
+# and the prompt loader falls back to them when no user copy is present
+# (see comfyui_prompt_tools/prompts.py and config_loader.py for the same
+# pattern applied to endpoints.yaml).
+comfyui_prompt_tools/system_prompts/*.txt

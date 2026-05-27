@@ -1,0 +1,30 @@
+# API keys and optional URL overrides for OpenAI-compatible Cloud providers.
+#
+# Copy this file to `config/api_keys.yaml` (gitignored) and fill in your
+# keys. The file is read at import time of the engines module; restart
+# ComfyUI after editing.
+#
+# Permissions: set to 600 so other users on the system cannot read your
+# keys:    chmod 600 config/api_keys.yaml
+#
+# Alternatives to this file (priority order, highest first):
+#   1. Env var COMFYUI_PROMPT_TOOLS_API_KEY_<PROVIDER>  (e.g. _OPENAI)
+#   2. Standard env vars: OPENAI_API_KEY, OPENROUTER_API_KEY, GEMINI_API_KEY
+#   3. This file (project-local)
+#   4. ~/.config/comfyui-prompt-tools/api_keys.yaml (user-global)
+#
+# The `url` field is optional. Omit it to use the provider's default URL.
+# Override it if the provider changes their endpoint (rare but happens).
+
+providers:
+  openai:
+    api_key: ""                              # sk-...
+    # url: "https://api.openai.com/v1"
+
+  claude:
+    api_key: ""                              # sk-or-...   (OpenRouter key)
+    # url: "https://openrouter.ai/api/v1"
+
+  gemini:
+    api_key: ""                              # AIza...
+    # url: "https://generativelanguage.googleapis.com/v1beta/openai/"

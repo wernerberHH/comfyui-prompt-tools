@@ -1,0 +1,71 @@
+# Endpoints configuration for comfyui-prompt-tools
+#
+# Copy this file to `endpoints.yaml` (same directory) and adjust to your setup.
+# `endpoints.yaml` is gitignored — your URLs and model names stay private.
+#
+# If `endpoints.yaml` is absent, this `.example` file is used as fallback,
+# so the nodes always work out of the box (with placeholder URLs).
+#
+# Network topology:
+#
+#   Scenario A — same host (ComfyUI and the model server on one machine):
+#     Use http://localhost:11434 (Ollama) or http://localhost:8000/v1 (vLLM).
+#     If ComfyUI runs inside a Docker container, either start it with
+#     `network_mode: host` or add
+#     `extra_hosts: ["host.docker.internal:host-gateway"]` and replace
+#     `localhost` with `host.docker.internal` — a default-bridge container
+#     cannot reach the host under `localhost`.
+#
+#   Scenario B — separate hosts (model server on one machine, ComfyUI on
+#   another):
+#     Use the LAN IP of the model server, e.g. http://10.0.0.42:11434.
+#     Pull each model on the host that actually serves it.
+#
+# Per-model system-prompt overrides (v0.5):
+#   When a model name in the list below matches one of the known families
+#   (Fermi/Cydonia*, qwen3-vl*, qwen3*, gemma*, huihui_ai/*, llama*) the
+#   prompt loader picks a `<mode>.<family>.txt` override if one ships in
+#   `system_prompts/`. See docs/system-prompt-overrides.md for the cascade.
+#
+# Format:
+#   engines:
+#     <engine_name>:                    # "ollama" or "vllm"
+#       - url: "<base_url>"             # base URL of the server
+#         models: ["<model1>", "..."]   # available models on this server
+#
+# The `models` list populates the model dropdown in the node UI.
+# Leave `models: []` to fall back to a free text field for that URL.
+
+engines:
+  ollama:
+    - url: "http://localhost:11434"
+      models:
+        - "qwen3-vl:8b"
+        - "qwen3-vl:32b"
+        - "llama3.2:3b"
+        - "gemma2:2b"
+
+  vllm:
+    - url: "http://localhost:8000/v1"
+      models:
+        - "Qwen/Qwen2.5-7B-Instruct"
+        - "Qwen/Qwen2.5-VL-7B-Instruct"
+
+  # ---- OpenAI-compatible cloud providers --------------------------
+  # The model lists below are empty by default. Open the Settings UI
+  # in ComfyUI (Extensions -> Prompt Tools -> Settings) and click
+  # "Discover Models" per provider to populate the dropdowns from the
+  # provider's /v1/models endpoint. API keys go in config/api_keys.yaml
+  # (see config/api_keys.yaml.example).
+
+  openai:
+    - url: "https://api.openai.com/v1"
+      models: []
+
+  claude:
+    - url: "https://openrouter.ai/api/v1"
+      models: []
+
+  gemini:
+    - url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+      models: []

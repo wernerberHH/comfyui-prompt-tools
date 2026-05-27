@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "comfyui-prompt-tools"
+version = "1.1.0"
+description = "LLM-powered prompt-engineering tools for ComfyUI (PromptHelper, VisionPromptHelper, PromptComposer, TextMux)"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Bernd Werner", email = "comfyui@werner.gmbh" },
+]
+requires-python = ">=3.10"
+keywords = [
+    "comfyui",
+    "comfyui-nodes",
+    "llm",
+    "prompt-engineering",
+    "ollama",
+    "vllm",
+    "openai",
+    "claude",
+    "gemini",
+    "vision",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    # Used by config_loader to parse config/endpoints.yaml for the URL /
+    # model autocomplete dropdowns in BasePromptNode. If unavailable, the
+    # nodes still work with plain text inputs.
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+]
+
+[project.urls]
+Repository = "https://github.com/wernerberHH/comfyui-prompt-tools"
+Issues     = "https://github.com/wernerberHH/comfyui-prompt-tools/issues"
+Changelog  = "https://github.com/wernerberHH/comfyui-prompt-tools/blob/main/CHANGELOG.md"
+
+# ComfyUI Manager metadata (used by Manager UI when installed via registry)
+[tool.comfy]
+PublisherId = "wernerberHH"
+DisplayName = "Prompt Tools"
+Icon = "🧠"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+markers = [
+    "unit: Unit tests (no network, no services)",
+    "integration: Integration tests (requires running Ollama)",
+]
