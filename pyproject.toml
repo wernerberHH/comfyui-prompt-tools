@@ -56,9 +56,8 @@ Changelog  = "https://github.com/wernerberHH/comfyui-prompt-tools/blob/main/CHAN
 
 # ComfyUI Manager metadata (used by Manager UI when installed via registry)
 [tool.comfy]
-PublisherId = "wernerberHH"
+PublisherId = "wernerberhh"
 DisplayName = "Prompt Tools"
-Icon = "🧠"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
