@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.2] — 2026-05-28
+
+### Changed
+
+- Package description rewritten to be more motivating and informative on
+  the Comfy Registry node page: now leads with a pitch, names the five
+  supported backends (Ollama, vLLM, OpenAI, Claude via OpenRouter,
+  Gemini) and highlights the four node families.
+
+### Added
+
+- Discovery keywords: `flux`, `prompt-generation`, `image-to-prompt`,
+  `vision-language-model`.
+
 ## [1.1.1] — 2026-05-28
 
 ### Added
