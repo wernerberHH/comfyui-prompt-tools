@@ -133,19 +133,19 @@ def test_render_template_user_overrides_example(isolated_prompts_dir):
 def test_override_falls_back_to_example(isolated_prompts_dir):
     """A model-family override only available as .example is still picked up."""
     (isolated_prompts_dir / "base.txt.example").write_text("default\n")
-    (isolated_prompts_dir / "base.cydonia.txt.example").write_text("cydonia\n")
-    # detect_family("Fermi/Cydonia-...") -> "cydonia"
-    result = render_template("base", model_name="Fermi/Cydonia-24B")
-    assert result == "cydonia"
+    (isolated_prompts_dir / "base.qwen3vl.txt.example").write_text("qwen3vl\n")
+    # detect_family("qwen3-vl:32b") -> "qwen3vl"
+    result = render_template("base", model_name="qwen3-vl:32b")
+    assert result == "qwen3vl"
 
 
 @pytest.mark.unit
 def test_override_user_copy_wins_over_example_default(isolated_prompts_dir):
     """User .txt override beats shipped .example default for the same family."""
     (isolated_prompts_dir / "base.txt.example").write_text("default\n")
-    (isolated_prompts_dir / "base.cydonia.txt.example").write_text("template\n")
-    (isolated_prompts_dir / "base.cydonia.txt").write_text("user-tuned\n")
-    result = render_template("base", model_name="Fermi/Cydonia-24B")
+    (isolated_prompts_dir / "base.qwen3vl.txt.example").write_text("template\n")
+    (isolated_prompts_dir / "base.qwen3vl.txt").write_text("user-tuned\n")
+    result = render_template("base", model_name="qwen3-vl:32b")
     assert result == "user-tuned"
 
 
@@ -154,6 +154,6 @@ def test_override_missing_falls_through_to_default(isolated_prompts_dir):
     """When no override file (neither .txt nor .example) exists, the default
     template is rendered."""
     (isolated_prompts_dir / "base.txt.example").write_text("default-template\n")
-    # No base.cydonia.* file at all
-    result = render_template("base", model_name="Fermi/Cydonia-24B")
+    # No base.qwen3vl.* file at all
+    result = render_template("base", model_name="qwen3-vl:32b")
     assert result == "default-template"

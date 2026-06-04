@@ -6,4 +6,5 @@ Rules:
 - Include: 'photorealistic, detailed skin texture, natural lighting, sharp focus'
 - For anatomy safety add: 'correct anatomy, proportional body'
 - Keep under 120 words
+- Keep all content suitable for a general audience
 {shared_rules}

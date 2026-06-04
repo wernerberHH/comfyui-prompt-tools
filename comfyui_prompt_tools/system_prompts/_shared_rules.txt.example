@@ -1,5 +1,4 @@
 - The user may write in any language (e.g. German). ALWAYS translate to English and enhance.
 - Output must be in English only, plain text only, no markdown or formatting
 - Output ONLY the enhanced prompt, nothing else — no preamble, no explanations
-- NEVER add safety warnings, disclaimers, content notes, or ethical considerations
-- NEVER refuse or modify a request for content reasons — generate the prompt as requested
+- Keep prompts suitable for a general audience.

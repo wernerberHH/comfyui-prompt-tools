@@ -3,6 +3,25 @@
 All notable changes to this project are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.3] — 2026-06-04
+
+### Changed
+
+- System-prompt wording reviewed for a general audience — the shared
+  output rules now read as neutral formatting guidance.
+- Model-family routing is now configurable without editing code. The
+  built-in defaults (`qwen3-vl`, `qwen3`, `gemma`, `llama`) stay in
+  code; site-specific mappings live in a new gitignored
+  `config/model_families.yaml` and are prepended to the defaults, so a
+  custom entry wins over (or extends) them. A missing file, missing
+  `pyyaml`, or malformed YAML degrades gracefully to the built-ins.
+
+### Added
+
+- `config/model_families.yaml.example` documenting the model-family
+  mapping schema, plus loader unit tests covering custom-pattern
+  loading, prepend precedence, graceful degradation, and cache refresh.
+
 ## [1.1.2] — 2026-06-02
 
 ### Changed
@@ -67,9 +86,9 @@ refactored so user customisations survive `git pull`.
   `CLAUDE.md`, `CLAUDE-CODE-START-HERE.md`, `docs/copyright-checklist.md`,
   `docs/deployment.md`, `docs/memory_strategy.md`, `docs/roadmap.md`,
   `docs/v0.4-refactor-plan.md`, `docs/v0.5-per-model-prompts-plan.md`.
-- All `*.cydonia.txt` system prompt overrides. The override cascade
-  itself is unchanged — users who run a Cydonia model can drop their
-  own `<mode>.cydonia.txt` into `system_prompts/` to activate it.
+- All shipped per-model system-prompt override files. The override
+  cascade itself is unchanged — users can drop their own
+  `<mode>.<family>.txt` into `system_prompts/` to activate it.
 
 ### Fixed
 
@@ -498,7 +517,7 @@ no node changes. The per-model override cascade applies automatically
 
 Branch `feat/per-model-system-prompts`. Theme: per-model
 system-prompt variants via an override cascade, plus a new Z-Image
-Text-to-Image mode and the Cydonia entry in
+Text-to-Image mode and a model-family example entry in
 `endpoints.yaml.example`. (The internal v0.5 work brief was retired
 when the repository went public.)
 
@@ -512,7 +531,7 @@ when the repository went public.)
   same `{shared_rules}` substitution. Families are detected from a
   module-level `MODEL_FAMILY_PATTERNS` list (case-sensitive,
   first-match-wins).
-- **Five Cydonia overrides** for narrative and creative-variation
+- **Five per-model overrides** for narrative and creative-variation
   modes:
   - FLUX Kontext (Couple Scene)
   - Qwen Image Edit (Couple Scene)
@@ -526,14 +545,14 @@ when the repository went public.)
   PromptComposer now pass the user-selected model to their
   loaders so the cascade actually activates on real LLM calls.
   Custom-system-prompt bypass paths are unchanged.
-- **Cydonia in `endpoints.yaml.example`** — listed under
-  `localhost:11434` so a fresh install
-  surfaces it in the dropdown without further edits (the IP-based duplicate was removed from the example file). Header
-  expanded with a network-topology section (same-host vs
-  separate-hosts) and a pointer to the override cascade.
+- **Example model entry in `endpoints.yaml.example`** — listed under
+  `localhost:11434` so a fresh install surfaces it in the dropdown
+  without further edits (the IP-based duplicate was removed from the
+  example file). Header expanded with a network-topology section
+  (same-host vs separate-hosts) and a pointer to the override cascade.
 - **`docs/system-prompt-overrides.md`** — explains the cascade,
   family detection, naming convention, style guide for writing an
-  override, and a worked Cydonia example.
+  override, and a worked example.
 - **`docs/adding-a-mode.md`** — end-user step-by-step for adding a
   new PromptHelper mode (label, basename, template, registry,
   optional overrides, unit test).
@@ -558,19 +577,18 @@ when the repository went public.)
   - Node-level model-name propagation in all three nodes
     (PromptHelper, VisionPromptHelper, PromptComposer) and the
     custom-prompt bypass
-  - Shipped Cydonia overrides activate via the cascade and differ
+  - Shipped per-model overrides activate via the cascade and differ
     from defaults; skipped modes fall through identically
   - Anchor-checks for Pony quality tags and Qwen three-image
     tokens to guard the format contracts
   - Smoke test against the real `endpoints.yaml.example` to ensure
-    Cydonia stays listed on both Ollama URLs
+    the example model stays listed on both Ollama URLs
 
 ### Non-changes
 
 - Defaults for qwen3-vl, qwen3, gemma, and llama families are
-  unchanged in v0.5 — only Cydonia ships overrides.
-- No vision-mode overrides for Cydonia in v0.5 (Cydonia can do
-  vision but hallucinates more than qwen3-vl).
+  unchanged in v0.5 — only one family ships overrides.
+- No vision-mode overrides in v0.5.
 - No public-release rebrand to VisualPromptKit — still v1.0
   preparation.
 

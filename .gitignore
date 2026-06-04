@@ -37,6 +37,7 @@ htmlcov/
 # v0.4 — local endpoints config (only .example is committed)
 config/endpoints.yaml
 config/api_keys.yaml
+config/model_families.yaml
 
 # v1.1 — user-editable system prompts. Templates ship as `.txt.example`
 # and the prompt loader falls back to them when no user copy is present

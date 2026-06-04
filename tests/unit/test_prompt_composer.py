@@ -250,14 +250,14 @@ class TestComposerOverrideCascade:
         """An ``composer_<style>.<family>.txt`` override wins over the default.
         Mocks: ``prompts._PROMPTS_DIR`` redirected to ``tmp_path``.
         """
-        (isolated_prompts_dir / "composer_flux2.cydonia.txt").write_text(
-            "CYDONIA composer override.", encoding="utf-8"
+        (isolated_prompts_dir / "composer_flux2.qwen3vl.txt").write_text(
+            "QWEN3VL composer override.", encoding="utf-8"
         )
         result = _load_composer_system_prompt(
             "FLUX.2 natural language",
-            "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+            "qwen3-vl:32b",
         )
-        assert "CYDONIA composer override" in result
+        assert "QWEN3VL composer override" in result
         assert "DEFAULT flux2" not in result
 
     def test_cascade_falls_back_to_default_when_no_override(
@@ -268,7 +268,7 @@ class TestComposerOverrideCascade:
         """
         result = _load_composer_system_prompt(
             "FLUX.2 natural language",
-            "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+            "qwen3-vl:32b",
         )
         assert "DEFAULT flux2 composer" in result
 
@@ -278,8 +278,8 @@ class TestComposerOverrideCascade:
         """``model_name=None`` skips the override probe.
         Mocks: ``prompts._PROMPTS_DIR`` redirected to ``tmp_path``.
         """
-        (isolated_prompts_dir / "composer_flux2.cydonia.txt").write_text(
-            "CYDONIA composer override.", encoding="utf-8"
+        (isolated_prompts_dir / "composer_flux2.qwen3vl.txt").write_text(
+            "QWEN3VL composer override.", encoding="utf-8"
         )
         result = _load_composer_system_prompt("FLUX.2 natural language", None)
         assert "DEFAULT flux2 composer" in result
@@ -299,18 +299,18 @@ class TestComposerOverrideCascade:
         Mocks: none.
         """
         with pytest.raises(KeyError, match="Unknown output style"):
-            _load_composer_system_prompt("Bogus Style", "Fermi/Cydonia-24B")
+            _load_composer_system_prompt("Bogus Style", "qwen3-vl:32b")
 
     def test_override_with_shared_rules_substitution(self, isolated_prompts_dir):
         """Override files honour the ``{shared_rules}`` placeholder.
         Mocks: ``prompts._PROMPTS_DIR`` redirected to ``tmp_path``.
         """
-        (isolated_prompts_dir / "composer_flux2.cydonia.txt").write_text(
+        (isolated_prompts_dir / "composer_flux2.qwen3vl.txt").write_text(
             "Override head.\n{shared_rules}\nOverride tail.", encoding="utf-8"
         )
         result = _load_composer_system_prompt(
             "FLUX.2 natural language",
-            "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+            "qwen3-vl:32b",
         )
         assert "Override head" in result
         assert "Override tail" in result
@@ -340,7 +340,7 @@ class TestComposerModelPropagation:
         ) as mock_loader:
             composer.compose(
                 **_compose_kwargs(
-                    model="Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+                    model="qwen3-vl:32b",
                     output_style="FLUX.2 natural language",
                     input_1="snippet",
                 )
@@ -349,7 +349,7 @@ class TestComposerModelPropagation:
         args, kwargs = mock_loader.call_args
         assert args == ("FLUX.2 natural language",)
         assert kwargs == {
-            "model_name": "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M"
+            "model_name": "qwen3-vl:32b"
         }
 
 

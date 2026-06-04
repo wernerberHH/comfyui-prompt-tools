@@ -34,10 +34,12 @@ Each step honours the user/example fallback above. The family is detected by
 """
 
 import re
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 _PROMPTS_DIR = Path(__file__).parent / "system_prompts"
+logger = logging.getLogger(__name__)
 
 # Mapping: visible mode label -> filename (without .txt)
 MODE_TO_FILE: Dict[str, str] = {
@@ -55,29 +57,86 @@ MODE_TO_FILE: Dict[str, str] = {
 
 AVAILABLE_MODES = list(MODE_TO_FILE.keys())
 
-# Ordered (regex, family) tuples. First match wins. Case-sensitive — Ollama
-# and vLLM model tags are case-sensitive, so we match them literally.
-# Add a new family by inserting a line in the desired priority position.
+# Built-in family patterns: ordered (regex, family) tuples, first match wins.
+# Case-sensitive — Ollama and vLLM model tags are case-sensitive, so we match
+# them literally. These are the neutral shipped defaults; site-specific
+# mappings live in config/model_families.yaml (gitignored) and are PREPENDED
+# at lookup time so they win over these. Add a new default by inserting a line
+# in the desired priority position.
 MODEL_FAMILY_PATTERNS: List[Tuple[str, str]] = [
-    (r"^Fermi/Cydonia",         "cydonia"),
     (r"^qwen3-vl",              "qwen3vl"),
     (r"^qwen3(\.|$|-prompt)",   "qwen3"),
     (r"^gemma",                 "gemma"),
-    (r"^huihui_ai/",            "abliterated"),
     (r"^llama",                 "llama"),
 ]
+
+_FAMILIES_FILE = Path(__file__).resolve().parent.parent / "config" / "model_families.yaml"
+
+_custom_family_cache: Optional[List[Tuple[str, str]]] = None
+_warned_missing_yaml = False
+
+
+def _load_custom_family_patterns(refresh: bool = False) -> List[Tuple[str, str]]:
+    """Return user-defined (regex, family) tuples from config/model_families.yaml.
+
+    The file is gitignored so site-specific model routing stays private. A
+    missing file, missing pyyaml, or malformed YAML all yield an empty list —
+    the built-in :data:`MODEL_FAMILY_PATTERNS` still apply. Cached after the
+    first call; pass ``refresh=True`` to force a re-read (mainly for tests).
+
+    Schema::
+
+        families:
+          - { pattern: "^Some/Model", family: somefamily }
+    """
+    global _custom_family_cache, _warned_missing_yaml
+    if _custom_family_cache is not None and not refresh:
+        return _custom_family_cache
+
+    patterns: List[Tuple[str, str]] = []
+    if _FAMILIES_FILE.is_file():
+        try:
+            import yaml  # type: ignore[import-not-found]
+        except ImportError:
+            if not _warned_missing_yaml:
+                logger.warning(
+                    "pyyaml not installed — custom model-family mappings "
+                    "disabled. Install with: pip install pyyaml"
+                )
+                _warned_missing_yaml = True
+            yaml = None
+        if yaml is not None:
+            try:
+                with _FAMILIES_FILE.open("r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+            except (OSError, yaml.YAMLError) as exc:
+                logger.warning("Failed to read %s: %s", _FAMILIES_FILE, exc)
+                data = None
+            if isinstance(data, dict):
+                for entry in data.get("families") or []:
+                    if not isinstance(entry, dict):
+                        continue
+                    pattern = entry.get("pattern")
+                    family = entry.get("family")
+                    if (isinstance(pattern, str) and pattern.strip()
+                            and isinstance(family, str) and family.strip()):
+                        patterns.append((pattern, family))
+
+    _custom_family_cache = patterns
+    return patterns
 
 
 def detect_family(model_name: Optional[str]) -> Optional[str]:
     """Map an Ollama/vLLM model tag to a family name, or ``None`` if unknown.
 
-    Walks :data:`MODEL_FAMILY_PATTERNS` in order and returns the first match.
-    Returns ``None`` for ``None``, empty string, or unmatched tags. Matching
-    is case-sensitive.
+    Walks the custom patterns from config/model_families.yaml (gitignored,
+    prepended so they win) followed by the built-in
+    :data:`MODEL_FAMILY_PATTERNS`, returning the first match. Returns ``None``
+    for ``None``, empty string, or unmatched tags. Matching is case-sensitive.
     """
     if not model_name:
         return None
-    for pattern, family in MODEL_FAMILY_PATTERNS:
+    for pattern, family in _load_custom_family_patterns() + MODEL_FAMILY_PATTERNS:
         if re.search(pattern, model_name):
             return family
     return None

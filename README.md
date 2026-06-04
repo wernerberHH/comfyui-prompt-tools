@@ -123,12 +123,12 @@ need either `network_mode: host` or `host.docker.internal`.
 
 PromptHelper, VisionPromptHelper, and PromptComposer can use
 model-family-specific variants of any system prompt. When you pick a
-model whose name matches one of the known families (currently
-`Fermi/Cydonia*`, `qwen3-vl*`, `qwen3*`, `gemma*`, `huihui_ai/*`,
-`llama*`), the loader prefers `<mode>.<family>.txt` over the default
-if such a file exists in `system_prompts/`. No override files ship
-with the public release — drop your own `<mode>.<family>.txt` into
-`system_prompts/` to activate the cascade. The fallback is silent —
+model whose name matches one of the known families (built-in:
+`qwen3-vl*`, `qwen3*`, `gemma*`, `llama*`, plus any you register in
+`config/model_families.yaml`), the loader prefers `<mode>.<family>.txt`
+over the default if such a file exists in `system_prompts/`. No
+override files ship with the public release — drop your own
+`<mode>.<family>.txt` into `system_prompts/` to activate the cascade. The fallback is silent —
 modes without an override use the default, exactly as before. See
 [`docs/system-prompt-overrides.md`](docs/system-prompt-overrides.md)
 for the cascade and how to author your own override.

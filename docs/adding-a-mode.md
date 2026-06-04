@@ -71,8 +71,8 @@ include the new label the next time ComfyUI reloads.
 ## Step 4 — (optional) ship model-family overrides
 
 If the mode benefits from a different tone for a specific model
-family (e.g. a narrative variant for Cydonia, a tag-only variant
-for an abliterated model), add
+family (e.g. a narrative variant for a chat-tuned model, a tag-only
+variant for another), add
 `system_prompts/<basename>.<family>.txt.example` (or `.txt` for a
 purely local override that should not be committed). The cascade in
 `prompts.py:render_template` picks it up automatically when the
@@ -91,7 +91,7 @@ In `tests/unit/test_prompts_loader.py`, add a short test that:
   body (so a future accidental file truncation surfaces).
 
 The parametrised cascade test
-(`test_cydonia_tag_falls_back_to_default_in_shipped_library`) runs
+(`test_override_tag_falls_back_to_default_in_shipped_library`) runs
 across every mode in `AVAILABLE_MODES`, so a new mode is covered the
 moment it lands in `MODE_TO_FILE` — no separate registration needed.
 

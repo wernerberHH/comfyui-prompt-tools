@@ -1,12 +1,11 @@
 # Per-Model System-Prompt Overrides
 
 Different LLM families respond best to different prompt styles. A
-hard-rule-heavy template written for Qwen3-VL ("MUST start with…",
-"DO NOT use…") produces stubborn or off-style output from Cydonia,
-which is RP-tuned and ignores tag syntax. v0.5 introduces a small
-override cascade so each `(mode, model-family)` pair can ship its own
-prompt variant — without forking the loader or duplicating the
-default.
+hard-rule-heavy template written for one model ("MUST start with…",
+"DO NOT use…") can produce stubborn or off-style output from another
+that prefers narrative framing and ignores tag syntax. The override
+cascade lets each `(mode, model-family)` pair ship its own prompt
+variant — without forking the loader or duplicating the default.
 
 ## The cascade
 
@@ -24,23 +23,37 @@ and `prompt_composer._load_composer_system_prompt` honour the same rules.
 
 ## Model-family detection
 
-Families are detected by a single ordered list in `prompts.py`:
+Families are detected from the model tag by an ordered list. The
+built-in defaults live in `prompts.py`:
 
 ```python
 MODEL_FAMILY_PATTERNS: list[tuple[str, str]] = [
-    (r"^Fermi/Cydonia",         "cydonia"),
     (r"^qwen3-vl",              "qwen3vl"),
     (r"^qwen3(\.|$|-prompt)",   "qwen3"),
     (r"^gemma",                 "gemma"),
-    (r"^huihui_ai/",            "abliterated"),
     (r"^llama",                 "llama"),
 ]
 ```
 
 Matching is case-sensitive — Ollama and vLLM model tags are
-case-sensitive too. First match wins. To add a new family, insert a
-line in the desired priority position; the loader picks it up
-without further wiring.
+case-sensitive too. First match wins.
+
+### Adding your own families
+
+You do not need to edit code to route your own model tags. Drop a
+`config/model_families.yaml` (gitignored — your model names stay
+private and survive `git pull`) next to `endpoints.yaml`:
+
+```yaml
+families:
+  - { pattern: "^MyOrg/MyModel", family: mymodel }
+```
+
+These custom patterns are **prepended** to the built-in defaults, so a
+custom entry wins over (or extends) the defaults. See
+`config/model_families.yaml.example` for the full schema. A missing
+file, missing `pyyaml`, or malformed YAML degrades gracefully — the
+built-in defaults still apply.
 
 ## Naming convention
 
@@ -50,29 +63,28 @@ follow the pattern `<existing_default_basename>.<family>.txt`
 
 | Mode label | Default file | Example override filename |
 |---|---|---|
-| FLUX Kontext (Couple Scene) | `flux_kontext_couple_scene.txt.example` | `flux_kontext_couple_scene.cydonia.txt` |
-| Qwen Image Edit (Couple Scene) | `qwen_image_edit_couple_scene.txt.example` | `qwen_image_edit_couple_scene.cydonia.txt` |
-| Random Character (Pony) | `random_character_pony.txt.example` | `random_character_pony.cydonia.txt` |
-| Random Character (Z-Image) | `random_character_zimage.txt.example` | `random_character_zimage.cydonia.txt` |
-| Z-Image Text-to-Image | `zimage_text_to_image.txt.example` | `zimage_text_to_image.cydonia.txt` |
+| FLUX Kontext (Couple Scene) | `flux_kontext_couple_scene.txt.example` | `flux_kontext_couple_scene.qwen3vl.txt` |
+| Qwen Image Edit (Couple Scene) | `qwen_image_edit_couple_scene.txt.example` | `qwen_image_edit_couple_scene.qwen3vl.txt` |
+| Random Character (Pony) | `random_character_pony.txt.example` | `random_character_pony.qwen3vl.txt` |
+| Random Character (Z-Image) | `random_character_zimage.txt.example` | `random_character_zimage.qwen3vl.txt` |
+| Z-Image Text-to-Image | `zimage_text_to_image.txt.example` | `zimage_text_to_image.qwen3vl.txt` |
 
-**The public release ships no override files.** The table above
-shows the naming convention for overrides users can author
-themselves. Modes well-suited to a Cydonia narrative tone are
-listed; modes with strict tag syntax (SDXL, SDXL Pony/Illustrious),
-structural edits (FLUX Kontext Scene Edit), or user-supplied
-prompts (Custom System Prompt) generally do not benefit from a
-narrative-tone override.
+**The public release ships no override files.** The table above shows
+the naming convention for overrides users can author themselves. Modes
+with strict tag syntax (SDXL, SDXL Pony/Illustrious), structural edits
+(FLUX Kontext Scene Edit), or user-supplied prompts (Custom System
+Prompt) generally benefit less from a model-specific override than
+free-form narrative modes do.
 
 ## Writing a good override
 
 The model-specific override is a *flavour* of the default, not a
 rewrite. Style guidance:
 
-- **Match the tone to the model.** Cydonia responds to narrative
-  framing ("You are writing the scene…"), not imperative walls.
-  Avoid `MUST`, `DO NOT`, `ONLY` in caps — Cydonia gets stubborn
-  under them.
+- **Match the tone to the model.** A narrative-tuned model responds to
+  framing ("You are writing the scene…"), not imperative walls. Avoid
+  `MUST`, `DO NOT`, `ONLY` in caps if your model gets stubborn under
+  them.
 - **Keep the format anchors.** If the downstream model requires
   `image 1` tokens, Pony quality tags, or identity-preservation
   phrasing, those still appear — they're contracts with the
@@ -87,25 +99,25 @@ rewrite. Style guidance:
   divergence for a specific mode), follow the pattern in
   `tests/unit/test_prompts_example_fallback.py`.
 
-## Worked example — author your own Cydonia override
+## Worked example — author your own override
 
-Suppose the default `flux_kontext_couple_scene.txt.example` opens
-with bullet-style rules: *"The prompt MUST reference both images"*,
-*"Always include 'Preserve the exact facial features…'"*, *"Do NOT
-use markdown"*. Cydonia tends to ignore those — it is RP-tuned and
-treats imperative walls as stage directions rather than constraints.
+Suppose the default `flux_kontext_couple_scene.txt.example` opens with
+bullet-style rules: *"The prompt MUST reference both images"*,
+*"Always include 'Preserve the exact facial features…'"*, *"Do NOT use
+markdown"*. A narrative-tuned model may treat imperative walls as stage
+directions rather than constraints.
 
-To author an override, create
-`system_prompts/flux_kontext_couple_scene.cydonia.txt` and reframe
-the task as character-voiced narration. Opening line might be a
-neutral framing such as *"You are writing the scene where two people
-share a frame, drawing on image 1 and image 2 as references."* The
-hard contracts that the downstream generator needs — the opening
-anchor phrase, both image tokens, identity preservation, anatomy
-safety, length budget — should survive as quiet sentences inside the
-prose, not as a numbered rule list. The result reads like a
-director's brief, which is the register Cydonia speaks in.
+First register the model's family in `config/model_families.yaml` (e.g.
+map its tag to `qwen3vl`, or define your own family name). Then create
+`system_prompts/flux_kontext_couple_scene.qwen3vl.txt` and reframe the
+task in the register your model responds to. The opening line might be
+a neutral framing such as *"You are writing the scene where two people
+share a frame, drawing on image 1 and image 2 as references."* The hard
+contracts the downstream generator needs — the opening anchor phrase,
+both image tokens, identity preservation, anatomy safety, length
+budget — should survive as quiet sentences inside the prose, not as a
+numbered rule list.
 
 The file is gitignored locally; commit it as
-`flux_kontext_couple_scene.cydonia.txt.example` if you want to
+`flux_kontext_couple_scene.qwen3vl.txt.example` if you want to
 contribute it upstream.

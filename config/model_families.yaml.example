@@ -1,0 +1,32 @@
+# Model-family mappings for per-model system-prompt overrides.
+#
+# Copy this file to `model_families.yaml` (same directory) to add your own
+# mappings. `model_families.yaml` is gitignored — your model names and routing
+# stay private and survive `git pull`.
+#
+# How it works:
+#   When a model tag matches a `pattern` (case-sensitive regex, anchored as you
+#   write it), the prompt loader looks for a `<mode>.<family>.txt` override in
+#   `system_prompts/`. See docs/system-prompt-overrides.md for the cascade.
+#
+# The loader walks your custom entries FIRST (top to bottom), then the built-in
+# defaults below — first match wins. So a custom entry can override or extend
+# the defaults without editing any code.
+#
+# These four families are already built into the loader (listed here for
+# reference); you do NOT need to repeat them in your `model_families.yaml`:
+#
+#   families:
+#     - { pattern: "^qwen3-vl",             family: qwen3vl }
+#     - { pattern: "^qwen3(\\.|$|-prompt)", family: qwen3 }
+#     - { pattern: "^gemma",                family: gemma }
+#     - { pattern: "^llama",                family: llama }
+#
+# To add your own, create `model_families.yaml` with e.g.:
+#
+#   families:
+#     - { pattern: "^MyOrg/MyModel", family: mymodel }
+#
+# Then drop a `system_prompts/<mode>.mymodel.txt` (or .txt.example) override.
+
+families: []

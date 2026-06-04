@@ -115,14 +115,14 @@ class TestVisionOverrideCascade:
         """An ``<file>.<family>.txt`` override wins over the default.
         Mocks: ``prompts._PROMPTS_DIR`` redirected to ``tmp_path``.
         """
-        (isolated_prompts_dir / "vision_outfit_transfer.cydonia.txt").write_text(
-            "CYDONIA vision override prompt.", encoding="utf-8"
+        (isolated_prompts_dir / "vision_outfit_transfer.qwen3vl.txt").write_text(
+            "QWEN3VL vision override prompt.", encoding="utf-8"
         )
         result = get_vision_system_prompt(
             "Outfit Transfer",
-            "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+            "qwen3-vl:32b",
         )
-        assert "CYDONIA vision override" in result
+        assert "QWEN3VL vision override" in result
         assert "DEFAULT outfit transfer" not in result
 
     def test_cascade_falls_back_to_default_when_no_override(
@@ -133,7 +133,7 @@ class TestVisionOverrideCascade:
         """
         result = get_vision_system_prompt(
             "Outfit Transfer",
-            "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+            "qwen3-vl:32b",
         )
         assert "DEFAULT outfit transfer" in result
 
@@ -151,8 +151,8 @@ class TestVisionOverrideCascade:
         override file exists.
         Mocks: ``prompts._PROMPTS_DIR`` redirected to ``tmp_path``.
         """
-        (isolated_prompts_dir / "vision_outfit_transfer.cydonia.txt").write_text(
-            "CYDONIA vision override prompt.", encoding="utf-8"
+        (isolated_prompts_dir / "vision_outfit_transfer.qwen3vl.txt").write_text(
+            "QWEN3VL vision override prompt.", encoding="utf-8"
         )
         result = get_vision_system_prompt("Outfit Transfer", None)
         assert "DEFAULT outfit transfer" in result
@@ -169,12 +169,12 @@ class TestVisionOverrideCascade:
         """Override files honour the ``{shared_rules}`` placeholder.
         Mocks: ``prompts._PROMPTS_DIR`` redirected to ``tmp_path``.
         """
-        (isolated_prompts_dir / "vision_outfit_transfer.cydonia.txt").write_text(
+        (isolated_prompts_dir / "vision_outfit_transfer.qwen3vl.txt").write_text(
             "Override head.\n{shared_rules}\nOverride tail.", encoding="utf-8"
         )
         result = get_vision_system_prompt(
             "Outfit Transfer",
-            "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+            "qwen3-vl:32b",
         )
         assert "Override head" in result
         assert "Override tail" in result
@@ -189,7 +189,7 @@ class TestVisionOverrideCascade:
         Mocks: ``prompts._PROMPTS_DIR`` redirected to ``tmp_path``.
         """
         with pytest.raises(KeyError, match="Unknown vision prompt mode"):
-            get_vision_system_prompt("Hair Transfer", "Fermi/Cydonia-24B")
+            get_vision_system_prompt("Hair Transfer", "qwen3-vl:32b")
 
 
 class TestDescribePicturePrompt:

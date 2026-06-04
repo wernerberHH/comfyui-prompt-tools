@@ -12,4 +12,5 @@ Rules:
 - Include anatomy tags: 'correct anatomy, proportional body, perfect hands'
 - Keep under 150 tags total — Pony breaks down with overly long prompts
 - Output ONLY the comma-separated tag string, no preamble, no explanations, no slot list
+- Keep all content suitable for a general audience
 {shared_rules}

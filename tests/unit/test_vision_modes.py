@@ -419,7 +419,7 @@ class TestVisionHelperModelPropagation:
             yield m
 
     def test_vision_helper_propagates_model_name(self, mock_openai_urlopen):
-        """Calling .generate() with a Cydonia model passes
+        """Calling .generate() with a recognised model passes
         ``model_name=<that model>`` to the vision-prompt loader.
         Mocks: nodes.vision_prompt_helper.get_vision_system_prompt
         (returns canned string).
@@ -434,7 +434,7 @@ class TestVisionHelperModelPropagation:
                 mode="Describe Face",
                 engine="vllm",
                 base_url="http://x:8000/v1",
-                model="Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+                model="qwen3-vl:32b",
                 temperature=0.5,
                 jpeg_quality=85,
                 max_edge=1280,
@@ -444,7 +444,7 @@ class TestVisionHelperModelPropagation:
         args, kwargs = mock_loader.call_args
         assert args == ("Describe Face",)
         assert kwargs == {
-            "model_name": "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M"
+            "model_name": "qwen3-vl:32b"
         }
 
     def test_vision_helper_custom_prompt_does_not_call_loader(
@@ -463,7 +463,7 @@ class TestVisionHelperModelPropagation:
                 mode="Describe Face",
                 engine="vllm",
                 base_url="http://x:8000/v1",
-                model="Fermi/Cydonia-24B",
+                model="qwen3-vl:32b",
                 temperature=0.5,
                 jpeg_quality=85,
                 max_edge=1280,

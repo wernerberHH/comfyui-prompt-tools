@@ -21,11 +21,12 @@
 #     Use the LAN IP of the model server, e.g. http://10.0.0.42:11434.
 #     Pull each model on the host that actually serves it.
 #
-# Per-model system-prompt overrides (v0.5):
+# Per-model system-prompt overrides:
 #   When a model name in the list below matches one of the known families
-#   (Fermi/Cydonia*, qwen3-vl*, qwen3*, gemma*, huihui_ai/*, llama*) the
-#   prompt loader picks a `<mode>.<family>.txt` override if one ships in
-#   `system_prompts/`. See docs/system-prompt-overrides.md for the cascade.
+#   (built-in: qwen3-vl*, qwen3*, gemma*, llama*, plus any you add in
+#   config/model_families.yaml) the prompt loader picks a `<mode>.<family>.txt`
+#   override if one ships in `system_prompts/`. See
+#   docs/system-prompt-overrides.md for the cascade.
 #
 # Format:
 #   engines:

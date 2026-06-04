@@ -131,18 +131,18 @@ class TestPromptHelperModelPropagation:
                     mode="FLUX Kontext (Scene Edit)",
                     engine="vllm",
                     base_url="http://x:8000",
-                    model="Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+                    model="qwen3-vl:32b",
                 )
             )
         assert mock_loader.call_count == 1
         _, kwargs = mock_loader.call_args
         assert kwargs == {
-            "model_name": "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M"
+            "model_name": "qwen3-vl:32b"
         }
 
     def test_random_mode_propagates_model_name(self, mock_openai_urlopen):
         """Random Character modes also propagate the model into the cascade
-        (e.g. so Cydonia can have a creative override for Random Pony).
+        (e.g. so a model family can have a creative override for Random Pony).
         Mocks: nodes.prompt_helper.get_system_prompt (returns canned string).
         """
         helper = PromptHelper()
@@ -155,7 +155,7 @@ class TestPromptHelperModelPropagation:
                     mode="Random Character (Pony)",
                     engine="vllm",
                     base_url="http://x:8000",
-                    model="Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+                    model="qwen3-vl:32b",
                     ethnicity_pool="japanese",
                     age_pool="25-35",
                 )
@@ -163,7 +163,7 @@ class TestPromptHelperModelPropagation:
         assert mock_loader.call_count == 1
         _, kwargs = mock_loader.call_args
         assert kwargs == {
-            "model_name": "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M"
+            "model_name": "qwen3-vl:32b"
         }
 
     def test_custom_mode_does_not_call_loader(self, mock_openai_urlopen):
@@ -180,7 +180,7 @@ class TestPromptHelperModelPropagation:
                     mode="Custom System Prompt",
                     engine="vllm",
                     base_url="http://x:8000",
-                    model="Fermi/Cydonia-24B",
+                    model="qwen3-vl:32b",
                     custom_system_prompt="user-supplied system prompt",
                 )
             )

@@ -15,6 +15,7 @@ from comfyui_prompt_tools.prompts import (
     AVAILABLE_MODES,
     MODE_TO_FILE,
     MODEL_FAMILY_PATTERNS,
+    _load_custom_family_patterns,
     detect_family,
     get_system_prompt,
 )
@@ -53,7 +54,7 @@ def test_shared_rules_are_substituted():
     """Modes with {shared_rules} should get the placeholder replaced."""
     prompt = get_system_prompt("FLUX Kontext (Scene Edit)")
     # The marker text only exists in _shared_rules.txt
-    assert "NEVER refuse" in prompt
+    assert "suitable for a general audience" in prompt
     assert "{shared_rules}" not in prompt
 
 
@@ -97,7 +98,6 @@ def test_zimage_text_to_image_mode_registered():
 @pytest.mark.parametrize(
     "model_name, expected_family",
     [
-        ("Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M", "cydonia"),
         ("qwen3-vl:8b", "qwen3vl"),
         ("qwen3-vl:32b", "qwen3vl"),
         ("qwen3.2", "qwen3"),
@@ -105,7 +105,6 @@ def test_zimage_text_to_image_mode_registered():
         ("qwen3-prompt:latest", "qwen3"),
         ("gemma2:2b", "gemma"),
         ("gemma3", "gemma"),
-        ("huihui_ai/qwen2-abliterated", "abliterated"),
         ("llama3.2:3b", "llama"),
         ("llama4", "llama"),
     ],
@@ -122,7 +121,7 @@ def test_detect_family_known_models(model_name, expected_family):
         "",
         "some/unknown-model",
         "mistral:7b",
-        "fermi/cydonia-foo",  # lowercase 'f' — case-sensitive, no match
+        "Qwen3-vl:8b",        # capital 'Q' — case-sensitive, no match
         "QWEN3",              # uppercase — case-sensitive, no match
     ],
 )
@@ -139,8 +138,8 @@ def test_pattern_order_qwen3_vl_beats_qwen3():
 
 @pytest.mark.unit
 def test_family_patterns_list_is_module_level():
-    """MODEL_FAMILY_PATTERNS must be importable and non-empty so users can
-    monkey-patch it from a future config layer."""
+    """MODEL_FAMILY_PATTERNS must be importable and non-empty — it holds the
+    built-in defaults that custom config/model_families.yaml entries extend."""
     assert isinstance(MODEL_FAMILY_PATTERNS, list)
     assert len(MODEL_FAMILY_PATTERNS) >= 1
 
@@ -171,14 +170,14 @@ def isolated_prompts_dir(tmp_path, monkeypatch):
 @pytest.mark.unit
 def test_cascade_uses_override_when_present(isolated_prompts_dir):
     """An override file `<file>.<family>.txt` must win over the default."""
-    (isolated_prompts_dir / "flux_kontext_couple_scene.cydonia.txt").write_text(
-        "CYDONIA override prompt content here.", encoding="utf-8"
+    (isolated_prompts_dir / "flux_kontext_couple_scene.qwen3vl.txt").write_text(
+        "QWEN3VL override prompt content here.", encoding="utf-8"
     )
     result = get_system_prompt(
         "FLUX Kontext (Couple Scene)",
-        "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+        "qwen3-vl:32b",
     )
-    assert "CYDONIA override" in result
+    assert "QWEN3VL override" in result
     assert "DEFAULT couple scene" not in result
 
 
@@ -187,7 +186,7 @@ def test_cascade_falls_back_to_default_when_no_override(isolated_prompts_dir):
     """Family is detected but no override file exists -> default loads."""
     result = get_system_prompt(
         "FLUX Kontext (Couple Scene)",
-        "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+        "qwen3-vl:32b",
     )
     assert "DEFAULT couple scene" in result
 
@@ -205,8 +204,8 @@ def test_cascade_falls_back_when_family_unknown(isolated_prompts_dir):
 def test_cascade_falls_back_when_model_name_is_none(isolated_prompts_dir):
     """Explicit ``model_name=None`` skips the override probe entirely."""
     # Even with an override file present, model_name=None must yield default.
-    (isolated_prompts_dir / "flux_kontext_couple_scene.cydonia.txt").write_text(
-        "CYDONIA override prompt content here.", encoding="utf-8"
+    (isolated_prompts_dir / "flux_kontext_couple_scene.qwen3vl.txt").write_text(
+        "QWEN3VL override prompt content here.", encoding="utf-8"
     )
     result = get_system_prompt("FLUX Kontext (Couple Scene)", None)
     assert "DEFAULT couple scene" in result
@@ -222,12 +221,12 @@ def test_model_name_none_equals_omitted():
 @pytest.mark.unit
 def test_override_with_shared_rules_substitution(isolated_prompts_dir):
     """Override files honour the {shared_rules} placeholder."""
-    (isolated_prompts_dir / "flux_kontext_couple_scene.cydonia.txt").write_text(
+    (isolated_prompts_dir / "flux_kontext_couple_scene.qwen3vl.txt").write_text(
         "Override start.\n{shared_rules}\nOverride end.", encoding="utf-8"
     )
     result = get_system_prompt(
         "FLUX Kontext (Couple Scene)",
-        "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M",
+        "qwen3-vl:32b",
     )
     assert "Override start" in result
     assert "Override end" in result
@@ -239,18 +238,17 @@ def test_override_with_shared_rules_substitution(isolated_prompts_dir):
 def test_unknown_mode_raises_keyerror_even_with_model_name(isolated_prompts_dir):
     """KeyError for unregistered modes must not be masked by the cascade."""
     with pytest.raises(KeyError):
-        get_system_prompt("Bogus Mode", "Fermi/Cydonia-24B")
+        get_system_prompt("Bogus Mode", "qwen3-vl:32b")
 
 
 # ---------------------------------------------------------------------------
-# Cydonia override cascade — public v1.1 baseline
+# Per-model override cascade — public release baseline
 # ---------------------------------------------------------------------------
 #
-# The v1.0 internal release shipped pre-written `*.cydonia.txt` overrides
-# for a handful of narrative modes. The public v1.1 release does NOT ship
-# any override files — users who run a Cydonia model can drop their own
-# `<mode>.cydonia.txt` (or `<mode>.cydonia.txt.example`) into
-# `comfyui_prompt_tools/system_prompts/` to activate the per-model cascade.
+# The public release does NOT ship any per-model override files — users who
+# run a specific model family can drop their own `<mode>.<family>.txt` (or
+# `<mode>.<family>.txt.example`) into `comfyui_prompt_tools/system_prompts/`
+# to activate the per-model cascade.
 #
 # These tests therefore assert the inverse property: with no override file
 # shipped, the cascade must transparently fall back to the default for
@@ -258,15 +256,15 @@ def test_unknown_mode_raises_keyerror_even_with_model_name(isolated_prompts_dir)
 # present, fallback when absent) are covered exhaustively in
 # `test_prompts_example_fallback.py` with isolated fixtures.
 
-CYDONIA_TAG = "Fermi/Cydonia-24B-v4.3-heretic-vision:Q4_K_M"
+QWEN3VL_TAG = "qwen3-vl:32b"
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize("mode", AVAILABLE_MODES)
-def test_cydonia_tag_falls_back_to_default_in_shipped_library(mode):
-    """No Cydonia override files ship in the public release, so the
+def test_override_tag_falls_back_to_default_in_shipped_library(mode):
+    """No per-model override files ship in the public release, so the
     cascade must fall back to the default for every mode when called
-    with the Cydonia tag.
+    with a recognised model tag.
 
     A failure here means an override file has leaked back into the
     shipped prompt library — re-run the public-release audit.
@@ -274,11 +272,11 @@ def test_cydonia_tag_falls_back_to_default_in_shipped_library(mode):
     Mocks: none — exercises the real shipped prompt library.
     """
     default = get_system_prompt(mode)
-    cydonia = get_system_prompt(mode, CYDONIA_TAG)
+    override_result = get_system_prompt(mode, QWEN3VL_TAG)
     assert default.strip(), f"empty default for {mode!r}"
-    assert default == cydonia, (
-        f"Mode {mode!r} produced different output for the Cydonia tag — "
-        f"a `<mode>.cydonia.txt` override file appears to have leaked "
+    assert default == override_result, (
+        f"Mode {mode!r} produced different output for the model tag — "
+        f"a `<mode>.qwen3vl.txt` override file appears to have leaked "
         f"into the shipped prompt library"
     )
     # shared_rules is substituted, never leaked as a placeholder
@@ -287,30 +285,138 @@ def test_cydonia_tag_falls_back_to_default_in_shipped_library(mode):
 
 @pytest.mark.unit
 def test_pony_override_keeps_score_tag_anchor():
-    """The Random Character (Pony) Cydonia override still instructs the
-    LLM to emit the Pony quality-tag anchor. Tag syntax is non-negotiable
-    for Pony even when the surrounding tone is narrative.
+    """The Random Character (Pony) prompt still instructs the LLM to emit
+    the Pony quality-tag anchor. Tag syntax is non-negotiable for Pony
+    regardless of which model the prompt is routed to.
 
     Mocks: none — pure file load.
     """
-    cydonia = get_system_prompt("Random Character (Pony)", CYDONIA_TAG)
+    override_result = get_system_prompt("Random Character (Pony)", QWEN3VL_TAG)
     for anchor in ("score_9", "score_8_up", "1girl", "1boy"):
-        assert anchor in cydonia, (
-            f"Pony Cydonia override dropped the {anchor!r} anchor — Pony "
+        assert anchor in override_result, (
+            f"Pony prompt dropped the {anchor!r} anchor — Pony "
             f"will not render correctly without it"
         )
 
 
 @pytest.mark.unit
 def test_qwen_couple_override_keeps_three_image_anchors():
-    """The Qwen Image Edit (Couple Scene) Cydonia override still references
-    all three image tokens — Qwen Image Edit cannot resolve identities
-    without them.
+    """The Qwen Image Edit (Couple Scene) prompt still references all three
+    image tokens — Qwen Image Edit cannot resolve identities without them.
 
     Mocks: none — pure file load.
     """
-    cydonia = get_system_prompt("Qwen Image Edit (Couple Scene)", CYDONIA_TAG)
+    override_result = get_system_prompt("Qwen Image Edit (Couple Scene)", QWEN3VL_TAG)
     for token in ("image 1", "image 2", "image 3"):
-        assert token in cydonia, (
-            f"Qwen Cydonia override dropped the {token!r} reference token"
+        assert token in override_result, (
+            f"Qwen prompt dropped the {token!r} reference token"
         )
+
+
+# ---------------------------------------------------------------------------
+# Custom model-family loader (config/model_families.yaml)
+# ---------------------------------------------------------------------------
+#
+# detect_family() prepends user-defined (regex, family) tuples read from the
+# gitignored config/model_families.yaml ahead of the built-in defaults, so a
+# site can route its own model tags without touching code. These tests rebind
+# the loader's _FAMILIES_FILE at a temp file and reset its cache so they never
+# touch the real config.
+
+
+@pytest.fixture
+def custom_families_file(tmp_path, monkeypatch):
+    """Point the custom-family loader at a temp YAML and clear its cache.
+
+    Resets the module cache before and after the test so the loader reads the
+    temp file fresh and the real config reloads cleanly for later tests.
+    """
+    from comfyui_prompt_tools import prompts as prompts_module
+
+    path = tmp_path / "model_families.yaml"
+    monkeypatch.setattr(prompts_module, "_FAMILIES_FILE", path)
+    prompts_module._custom_family_cache = None
+    yield path
+    prompts_module._custom_family_cache = None
+
+
+@pytest.mark.unit
+def test_custom_family_pattern_is_loaded(custom_families_file):
+    """A pattern from model_families.yaml is honoured by detect_family."""
+    pytest.importorskip("yaml")
+    custom_families_file.write_text(
+        'families:\n  - { pattern: "^MyOrg/Model", family: myfam }\n',
+        encoding="utf-8",
+    )
+    assert _load_custom_family_patterns(refresh=True) == [("^MyOrg/Model", "myfam")]
+    assert detect_family("MyOrg/Model-7b") == "myfam"
+
+
+@pytest.mark.unit
+def test_custom_family_prepended_wins_over_builtin(custom_families_file):
+    """Custom patterns are prepended, so they win over a built-in that would
+    also match the same tag."""
+    pytest.importorskip("yaml")
+    custom_families_file.write_text(
+        'families:\n  - { pattern: "^qwen3-vl", family: customvl }\n',
+        encoding="utf-8",
+    )
+    _load_custom_family_patterns(refresh=True)
+    assert detect_family("qwen3-vl:8b") == "customvl"
+
+
+@pytest.mark.unit
+def test_missing_custom_file_uses_builtins_only(custom_families_file):
+    """No model_families.yaml -> empty custom list, built-ins still apply."""
+    assert not custom_families_file.exists()
+    assert _load_custom_family_patterns(refresh=True) == []
+    assert detect_family("qwen3-vl:8b") == "qwen3vl"
+
+
+@pytest.mark.unit
+def test_malformed_custom_yaml_yields_empty(custom_families_file):
+    """Malformed YAML is swallowed -> empty list, no exception raised."""
+    pytest.importorskip("yaml")
+    custom_families_file.write_text("families: [unclosed\n", encoding="utf-8")
+    assert _load_custom_family_patterns(refresh=True) == []
+    assert detect_family("qwen3-vl:8b") == "qwen3vl"
+
+
+@pytest.mark.unit
+def test_custom_entries_missing_fields_are_skipped(custom_families_file):
+    """Entries lacking pattern or family (or non-dict) are dropped; valid
+    ones survive."""
+    pytest.importorskip("yaml")
+    custom_families_file.write_text(
+        "families:\n"
+        '  - { pattern: "^Good/One", family: good }\n'
+        '  - { pattern: "^NoFamily/Here" }\n'
+        "  - { family: orphan }\n"
+        '  - "not-a-mapping"\n',
+        encoding="utf-8",
+    )
+    assert _load_custom_family_patterns(refresh=True) == [("^Good/One", "good")]
+
+
+@pytest.mark.unit
+def test_non_dict_yaml_yields_empty(custom_families_file):
+    """A top-level non-mapping document yields an empty custom list."""
+    pytest.importorskip("yaml")
+    custom_families_file.write_text("- just\n- a\n- list\n", encoding="utf-8")
+    assert _load_custom_family_patterns(refresh=True) == []
+
+
+@pytest.mark.unit
+def test_custom_family_cache_refresh(custom_families_file):
+    """Result is cached; refresh=True forces a re-read after the file changes."""
+    pytest.importorskip("yaml")
+    custom_families_file.write_text(
+        'families:\n  - { pattern: "^A/One", family: first }\n', encoding="utf-8"
+    )
+    assert _load_custom_family_patterns(refresh=True) == [("^A/One", "first")]
+    custom_families_file.write_text(
+        'families:\n  - { pattern: "^B/Two", family: second }\n', encoding="utf-8"
+    )
+    # cached -> stale until refresh
+    assert _load_custom_family_patterns() == [("^A/One", "first")]
+    assert _load_custom_family_patterns(refresh=True) == [("^B/Two", "second")]
