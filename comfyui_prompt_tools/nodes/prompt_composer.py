@@ -26,6 +26,7 @@ OUTPUT_STYLES = [
     "SDXL tag-based",
     "Z-Image compact",
     "Wan 2.2 motion",
+    "LTX-2.3 audio-video",
 ]
 
 _STYLE_TO_FILE = {
@@ -33,6 +34,7 @@ _STYLE_TO_FILE = {
     "SDXL tag-based":          "composer_sdxl",
     "Z-Image compact":         "composer_zimage",
     "Wan 2.2 motion":          "composer_wan22",
+    "LTX-2.3 audio-video":     "composer_ltx2",
 }
 
 

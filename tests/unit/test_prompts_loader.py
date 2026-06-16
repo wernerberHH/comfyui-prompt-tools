@@ -28,8 +28,8 @@ from comfyui_prompt_tools.prompts import (
 
 @pytest.mark.unit
 def test_available_modes_count():
-    """Should have exactly 10 modes (9 v0.4 + Z-Image Text-to-Image v0.5)."""
-    assert len(AVAILABLE_MODES) == 10
+    """Should have exactly 11 modes (9 v0.4 + Z-Image v0.5 + LTX-2.3 Audio-Video)."""
+    assert len(AVAILABLE_MODES) == 11
 
 
 @pytest.mark.unit

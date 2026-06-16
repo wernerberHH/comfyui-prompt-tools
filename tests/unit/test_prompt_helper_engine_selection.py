@@ -81,9 +81,9 @@ class TestPromptHelperEngineSelection:
         assert "serious" in body
 
     def test_prompt_helper_keeps_all_modes_listed(self):
-        """The mode dropdown exposes exactly the 10 documented v0.5 modes."""
+        """The mode dropdown exposes exactly the 11 documented modes."""
         modes = AVAILABLE_MODES
-        assert len(modes) == 10
+        assert len(modes) == 11
         expected = {
             "FLUX Kontext (Scene Edit)",
             "FLUX Kontext (Couple Scene)",
@@ -94,6 +94,7 @@ class TestPromptHelperEngineSelection:
             "SDXL Pony/Illustrious",
             "Random Character (Z-Image)",
             "Random Character (Pony)",
+            "LTX-2.3 Video (Audio-Video)",
             "Custom System Prompt",
         }
         assert set(modes) == expected

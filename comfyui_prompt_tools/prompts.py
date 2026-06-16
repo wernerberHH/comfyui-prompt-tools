@@ -52,6 +52,7 @@ MODE_TO_FILE: Dict[str, str] = {
     "SDXL Pony/Illustrious":          "sdxl_pony_illustrious",
     "Random Character (Z-Image)":     "random_character_zimage",
     "Random Character (Pony)":        "random_character_pony",
+    "LTX-2.3 Video (Audio-Video)":    "ltx2_video",
     "Custom System Prompt":           "custom_system_prompt",
 }
 
