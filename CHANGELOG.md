@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.4] — 2026-06-16
+
+### Added
+
+- New PromptHelper mode `ltx2_video` for LTX-2.3 audio-video generation:
+  expands a short motion intent into a single flowing prompt covering
+  scene, explicit motion, camera behaviour, and synchronized audio
+  (ambient tone, foley, optional speech and music).
+- New PromptComposer style `composer_ltx2` producing the same LTX-2.3
+  prompt format at the end of a specialist pipeline.
+
 ## [1.1.3] — 2026-06-04
 
 ### Changed
