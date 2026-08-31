@@ -27,6 +27,8 @@ OUTPUT_STYLES = [
     "Z-Image compact",
     "Wan 2.2 motion",
     "LTX-2.3 audio-video",
+    "Pony photoreal",
+    "Pony anime/illustrious",
 ]
 
 _STYLE_TO_FILE = {
@@ -35,6 +37,8 @@ _STYLE_TO_FILE = {
     "Z-Image compact":         "composer_zimage",
     "Wan 2.2 motion":          "composer_wan22",
     "LTX-2.3 audio-video":     "composer_ltx2",
+    "Pony photoreal":          "composer_pony_photoreal",
+    "Pony anime/illustrious":  "composer_pony_anime",
 }
 
 

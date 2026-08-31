@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Two new PromptComposer output styles for Pony Diffusion XL:
+  `Pony photoreal` (photoreal merges) and `Pony anime/illustrious`
+  (Illustrious XL anime models). Both emit tag-based prompts anchored on
+  the `score_*` quality tags; they differ in the appended style tags and
+  in the `source_anime` tag.
+
 ## [1.1.4] — 2026-06-16
 
 ### Added
