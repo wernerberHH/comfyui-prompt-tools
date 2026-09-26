@@ -53,6 +53,8 @@ MODE_TO_FILE: Dict[str, str] = {
     "Random Character (Z-Image)":     "random_character_zimage",
     "Random Character (Pony)":        "random_character_pony",
     "LTX-2.3 Video (Audio-Video)":    "ltx2_video",
+    "Krea 2 Text-to-Image":           "krea2_text_to_image",
+    "LTX-2.5 Video (Multi-Shot Audio-Video)": "ltx25_video",
     "Custom System Prompt":           "custom_system_prompt",
 }
 

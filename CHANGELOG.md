@@ -12,6 +12,19 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (Illustrious XL anime models). Both emit tag-based prompts anchored on
   the `score_*` quality tags; they differ in the appended style tags and
   in the `source_anime` tag.
+- New PromptHelper mode `Krea 2 Text-to-Image` for Krea 2, which is
+  steered by natural-language description rather than tag lists. The
+  template expands a short idea into one prose paragraph covering
+  subject, composition, light, colour, material, medium and style, with
+  in-image text carried over in quotes and quality boosters left out.
+- New PromptHelper mode `LTX-2.5 Video (Multi-Shot Audio-Video)`. Unlike
+  the existing LTX-2.3 mode it can describe two to four shots inside one
+  generation: cuts are named in prose, every shot re-anchors its shot
+  size, angle and light, carries exactly one camera move, and names its
+  own ambience and foley. Single-shot inputs still produce a single shot.
+- Two matching PromptComposer output styles, `Krea 2 natural language`
+  and `LTX-2.5 multi-shot`, so both formats are also available at the end
+  of a describe-and-compose pipeline.
 
 ## [1.1.4] — 2026-06-16
 

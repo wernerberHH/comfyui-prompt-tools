@@ -405,6 +405,125 @@ class TestWan22MotionStyle:
         assert "Style: Wan 2.2 motion" in debug
 
 
+class TestKrea2NaturalLanguageStyle:
+    """Krea 2 natural-language composer style for prose-steered image models."""
+
+    def test_krea2_in_output_styles(self):
+        """Krea 2 natural language is registered in OUTPUT_STYLES.
+        Mocks: none.
+        """
+        assert "Krea 2 natural language" in OUTPUT_STYLES
+
+    def test_krea2_style_loads_non_empty_prompt(self):
+        """The style resolves to a non-empty composer prompt.
+        Mocks: none.
+        """
+        prompt = _load_composer_system_prompt("Krea 2 natural language")
+        assert isinstance(prompt, str)
+        assert len(prompt.strip()) > 100
+
+    def test_krea2_style_shared_rules_substituted(self):
+        """The {shared_rules} placeholder is replaced in the rendered output.
+        Mocks: none.
+        """
+        prompt = _load_composer_system_prompt("Krea 2 natural language")
+        assert "{shared_rules}" not in prompt
+
+    def test_krea2_style_template_fingerprints(self):
+        """Stable fingerprint strings from the template body — surface
+        accidental file truncation in CI.
+        Mocks: none.
+        """
+        prompt = _load_composer_system_prompt("Krea 2 natural language")
+        assert "Krea 2" in prompt
+        assert "90-150 words" in prompt
+        # Krea-specific guidance: prose instead of tags, no negation
+        assert "tags" in prompt.lower()
+        assert "negation" in prompt.lower()
+
+    def test_krea2_style_routes_to_correct_file(self, mock_openai_urlopen):
+        """Selecting 'Krea 2 natural language' in compose() routes through
+        the krea2 system prompt file.
+        Mocks: openai_client.urllib.request.urlopen via mock_openai_urlopen.
+        """
+        composer = PromptComposer()
+        out, debug = composer.compose(
+            **_compose_kwargs(
+                output_style="Krea 2 natural language",
+                user_instruction="a rainy street at dusk",
+                input_1="A young woman in a yellow raincoat stands under a shop awning.",
+            )
+        )
+        assert out == "test output"
+        assert "Style: Krea 2 natural language" in debug
+
+
+class TestLtx25MultiShotStyle:
+    """LTX-2.5 multi-shot composer style for audio-video with cuts."""
+
+    def test_ltx25_in_output_styles(self):
+        """LTX-2.5 multi-shot is registered in OUTPUT_STYLES.
+        Mocks: none.
+        """
+        assert "LTX-2.5 multi-shot" in OUTPUT_STYLES
+
+    def test_ltx25_style_loads_non_empty_prompt(self):
+        """The style resolves to a non-empty composer prompt.
+        Mocks: none.
+        """
+        prompt = _load_composer_system_prompt("LTX-2.5 multi-shot")
+        assert isinstance(prompt, str)
+        assert len(prompt.strip()) > 100
+
+    def test_ltx25_style_shared_rules_substituted(self):
+        """The {shared_rules} placeholder is replaced in the rendered output.
+        Mocks: none.
+        """
+        prompt = _load_composer_system_prompt("LTX-2.5 multi-shot")
+        assert "{shared_rules}" not in prompt
+
+    def test_ltx25_style_template_fingerprints(self):
+        """Stable fingerprint strings from the template body — surface
+        accidental file truncation in CI.
+        Mocks: none.
+        """
+        prompt = _load_composer_system_prompt("LTX-2.5 multi-shot")
+        assert "LTX-2.5" in prompt
+        assert "140-300 words" in prompt
+        # Multi-shot specifics that separate this style from composer_ltx2
+        for anchor in ("cut", "shot size", "audio", "negation"):
+            assert anchor in prompt.lower(), (
+                f"LTX-2.5 composer prompt lost the {anchor!r} rule"
+            )
+
+    def test_ltx25_style_routes_to_correct_file(self, mock_openai_urlopen):
+        """Selecting 'LTX-2.5 multi-shot' in compose() routes through the
+        ltx25 system prompt file.
+        Mocks: openai_client.urllib.request.urlopen via mock_openai_urlopen.
+        """
+        composer = PromptComposer()
+        out, debug = composer.compose(
+            **_compose_kwargs(
+                output_style="LTX-2.5 multi-shot",
+                user_instruction="she looks up, then the view cuts to her hands on the railing",
+                input_1="A woman in a yellow raincoat leans on a harbour railing at dusk.",
+            )
+        )
+        assert out == "test output"
+        assert "Style: LTX-2.5 multi-shot" in debug
+
+    def test_ltx23_style_label_unchanged_by_ltx25(self):
+        """Adding LTX-2.5 must not disturb the LTX-2.3 style label or file.
+
+        Style labels are persisted as plain strings inside saved ComfyUI
+        workflows, so renaming one silently breaks every workflow using it.
+        Mocks: none.
+        """
+        assert "LTX-2.3 audio-video" in OUTPUT_STYLES
+        prompt = _load_composer_system_prompt("LTX-2.3 audio-video")
+        assert prompt.startswith("You are a prompt composer for LTX-2.3")
+
+
 # ==========================================================================
 # v0.8: LoRA-trigger keywords field on PromptComposer
 # ==========================================================================
