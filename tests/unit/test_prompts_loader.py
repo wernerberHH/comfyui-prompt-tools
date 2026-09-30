@@ -28,8 +28,9 @@ from comfyui_prompt_tools.prompts import (
 
 @pytest.mark.unit
 def test_available_modes_count():
-    """Should have exactly 11 modes (9 v0.4 + Z-Image v0.5 + LTX-2.3 Audio-Video)."""
-    assert len(AVAILABLE_MODES) == 11
+    """Should have exactly 13 modes (9 v0.4 + Z-Image v0.5 + LTX-2.3 Audio-Video
+    + Krea 2 Text-to-Image + LTX-2.5 Multi-Shot Audio-Video)."""
+    assert len(AVAILABLE_MODES) == 13
 
 
 @pytest.mark.unit
@@ -87,6 +88,64 @@ def test_zimage_text_to_image_mode_registered():
     assert "negation" in prompt.lower()
     # Shared rules block is wired in
     assert "{shared_rules}" not in prompt
+
+
+@pytest.mark.unit
+def test_krea2_text_to_image_mode_registered():
+    """Krea 2 Text-to-Image must be a registered mode and load a Krea-2
+    flavoured default template.
+
+    Krea 2 is steered by prose, so the template has to say so explicitly and
+    must not drift back into the tag-list style used by the SDXL modes.
+
+    Mocks: none — pure file load.
+    """
+    assert "Krea 2 Text-to-Image" in AVAILABLE_MODES
+    assert MODE_TO_FILE["Krea 2 Text-to-Image"] == "krea2_text_to_image"
+    prompt = get_system_prompt("Krea 2 Text-to-Image")
+    assert "Krea 2" in prompt
+    # Krea 2 style guarantees: prose over tags, no quality boosters,
+    # no negation, explicit length budget.
+    assert "tags" in prompt.lower()
+    assert "negation" in prompt.lower()
+    assert "90-150 words" in prompt
+    assert "{shared_rules}" not in prompt
+
+
+@pytest.mark.unit
+def test_ltx25_video_mode_registered():
+    """LTX-2.5 Video must be a registered mode and load a multi-shot
+    audio-video template.
+
+    The multi-shot rules are what separate LTX-2.5 from the existing LTX-2.3
+    mode — cut wording, per-shot camera move, and audio must all survive.
+
+    Mocks: none — pure file load.
+    """
+    assert "LTX-2.5 Video (Multi-Shot Audio-Video)" in AVAILABLE_MODES
+    assert MODE_TO_FILE["LTX-2.5 Video (Multi-Shot Audio-Video)"] == "ltx25_video"
+    prompt = get_system_prompt("LTX-2.5 Video (Multi-Shot Audio-Video)")
+    assert "LTX-2.5" in prompt
+    for anchor in ("cut", "camera", "audio", "shot"):
+        assert anchor in prompt.lower(), f"LTX-2.5 prompt lost the {anchor!r} rule"
+    assert "negation" in prompt.lower()
+    assert "{shared_rules}" not in prompt
+
+
+@pytest.mark.unit
+def test_ltx23_mode_label_unchanged_by_ltx25():
+    """Adding LTX-2.5 must not disturb the LTX-2.3 label or its file.
+
+    Mode labels are persisted as plain strings inside saved ComfyUI
+    workflows, so renaming one silently breaks every workflow using it.
+
+    Mocks: none.
+    """
+    assert "LTX-2.3 Video (Audio-Video)" in AVAILABLE_MODES
+    assert MODE_TO_FILE["LTX-2.3 Video (Audio-Video)"] == "ltx2_video"
+    assert get_system_prompt("LTX-2.3 Video (Audio-Video)").startswith(
+        "You are a prompt engineer for LTX-2.3"
+    )
 
 
 # ---------------------------------------------------------------------------

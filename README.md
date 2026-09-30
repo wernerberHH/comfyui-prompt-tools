@@ -5,13 +5,16 @@ common engine selector with five pluggable backends — Ollama, vLLM, OpenAI,
 Claude (via OpenRouter) and Gemini:
 
 - **PromptHelper** — Translates short user input into a fully-formed prompt
-  for FLUX, FLUX Kontext, Qwen Image Edit, SDXL, Z-Image, or Pony/Illustrious.
+  for FLUX, FLUX Kontext, Qwen Image Edit, SDXL, Z-Image, Pony/Illustrious,
+  Krea 2, or LTX video (2.3 and 2.5).
 - **VisionPromptHelper** — Extracts or edits prompts from one or two reference
   images via a vision LLM. 14 modes split into edit-modes (transform an image)
   and describe-modes (extract one aspect as a snippet).
 - **PromptComposer** — Fuses 1–5 description snippets and a user instruction
   into one final prompt via LLM call. Output styles: FLUX.2 natural language,
-  SDXL tag-based, Z-Image compact.
+  SDXL tag-based, Z-Image compact, Wan 2.2 motion, LTX-2.3 audio-video,
+  Pony photoreal, Pony anime/illustrious, Krea 2 natural language,
+  LTX-2.5 multi-shot.
 - **TextMux** — Switches a CLIPTextEncode input between an AI-enhanced source
   and a manual override.
 
@@ -154,6 +157,9 @@ git pull
 | SDXL Pony/Illustrious | Booru-style tag list with score tags | Pony Diffusion / Illustrious XL |
 | Random Character (Z-Image) | Long natural-language description | Bulk character ideation on Z-Image |
 | Random Character (Pony) | Tag list with random variation slots | Bulk character ideation on Pony |
+| Krea 2 Text-to-Image | Detailed natural-language paragraph | Standalone Krea 2 text-to-image |
+| LTX-2.3 Video (Audio-Video) | Single-shot clip description with audio | LTX-2.3 video with synchronized sound |
+| LTX-2.5 Video (Multi-Shot Audio-Video) | Chronological 1–4 shot description with cuts and audio | LTX-2.5 video with synchronized sound |
 | Custom System Prompt | User-supplied | Anything else |
 
 The two **Random Character** modes use configurable pools (ethnicity, age,

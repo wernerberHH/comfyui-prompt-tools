@@ -29,6 +29,8 @@ OUTPUT_STYLES = [
     "LTX-2.3 audio-video",
     "Pony photoreal",
     "Pony anime/illustrious",
+    "Krea 2 natural language",
+    "LTX-2.5 multi-shot",
 ]
 
 _STYLE_TO_FILE = {
@@ -39,6 +41,8 @@ _STYLE_TO_FILE = {
     "LTX-2.3 audio-video":     "composer_ltx2",
     "Pony photoreal":          "composer_pony_photoreal",
     "Pony anime/illustrious":  "composer_pony_anime",
+    "Krea 2 natural language": "composer_krea2",
+    "LTX-2.5 multi-shot":      "composer_ltx25",
 }
 
 
