@@ -51,24 +51,28 @@ DESCRIBE_MODES = [
 
 
 class TestVisionModeInventory:
-    def test_all_15_modes_have_system_prompt_file(self):
+    def test_every_mode_has_a_system_prompt_file(self):
         """Every registered mode loads a non-empty rendered prompt from disk.
+
+        No count is asserted: modes live in
+        ``config/catalog.yaml.example`` and adding one must not require a
+        test edit.
         Mocks: none — pure file load.
         """
-        assert len(AVAILABLE_VISION_MODES) == 15
+        assert AVAILABLE_VISION_MODES  # a node with an empty dropdown is unusable
         for mode in AVAILABLE_VISION_MODES:
             rendered = get_vision_system_prompt(mode)
             assert rendered.strip(), f"Empty prompt for mode {mode!r}"
 
     def test_registry_partitions_into_edit_and_describe(self):
-        """The 15 modes split into the documented edit / describe groups.
+        """The modes split into the documented edit / describe groups.
         Mocks: none.
         """
         assert set(AVAILABLE_VISION_MODES) == set(EDIT_MODES) | set(DESCRIBE_MODES)
         assert set(EDIT_MODES).isdisjoint(set(DESCRIBE_MODES))
 
     def test_two_image_modes_only_outfit_transfer(self):
-        """Outfit Transfer is the sole two-image mode in v0.4.
+        """Outfit Transfer is the sole mode declared with ``images: 2``.
         Mocks: none.
         """
         assert TWO_IMAGE_MODES == frozenset({"Outfit Transfer"})
@@ -80,12 +84,10 @@ class TestVisionModeInventory:
 class TestDescribeModePrompts:
     @pytest.mark.parametrize("mode", DESCRIBE_MODES)
     def test_describe_modes_output_short_snippets(self, mode):
-        """Describe-mode prompts instruct the LLM to output a short snippet
-        (length range and 'image 1' anchor present).
+        """Describe-mode prompts instruct the LLM to output a short snippet.
         Mocks: none — string check on the rendered template.
         """
         rendered = get_vision_system_prompt(mode)
-        assert "image 1" in rendered.lower()
         # Each describe template documents a word range like '20-50 words' or
         # '20-60 words'. Looking for the keyword 'words' is sufficient — the
         # exact range varies per aspect.
@@ -96,6 +98,9 @@ class TestEditModePrompts:
     @pytest.mark.parametrize("mode", EDIT_MODES)
     def test_edit_modes_output_edit_instructions(self, mode):
         """Edit-mode prompts instruct an edit operation referencing image 1.
+
+        Rendered without a target model, so the neutral ``Generic`` wording
+        ``image 1`` is what the ``{img1}`` placeholders become.
         Mocks: none — string check on the rendered template.
         """
         rendered = get_vision_system_prompt(mode)
@@ -444,7 +449,8 @@ class TestVisionHelperModelPropagation:
         args, kwargs = mock_loader.call_args
         assert args == ("Describe Face",)
         assert kwargs == {
-            "model_name": "qwen3-vl:32b"
+            "model_name": "qwen3-vl:32b",
+            "target_model": "Generic",
         }
 
     def test_vision_helper_custom_prompt_does_not_call_loader(

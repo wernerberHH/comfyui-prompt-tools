@@ -360,7 +360,7 @@ class TestWan22MotionStyle:
         """Wan 2.2 motion is registered in OUTPUT_STYLES.
         Mocks: none.
         """
-        assert "Wan 2.2 motion" in OUTPUT_STYLES
+        assert "Wan 2.2 – Motion" in OUTPUT_STYLES
 
     def test_wan22_style_loads_non_empty_prompt(self):
         """Wan 2.2 motion style resolves to a non-empty composer prompt.
@@ -412,7 +412,7 @@ class TestKrea2NaturalLanguageStyle:
         """Krea 2 natural language is registered in OUTPUT_STYLES.
         Mocks: none.
         """
-        assert "Krea 2 natural language" in OUTPUT_STYLES
+        assert "Krea 2 – Natural Language" in OUTPUT_STYLES
 
     def test_krea2_style_loads_non_empty_prompt(self):
         """The style resolves to a non-empty composer prompt.
@@ -465,7 +465,7 @@ class TestLtx25MultiShotStyle:
         """LTX-2.5 multi-shot is registered in OUTPUT_STYLES.
         Mocks: none.
         """
-        assert "LTX-2.5 multi-shot" in OUTPUT_STYLES
+        assert "LTX-2.5 – Multi-Shot Video with Audio" in OUTPUT_STYLES
 
     def test_ltx25_style_loads_non_empty_prompt(self):
         """The style resolves to a non-empty composer prompt.
@@ -512,16 +512,18 @@ class TestLtx25MultiShotStyle:
         assert out == "test output"
         assert "Style: LTX-2.5 multi-shot" in debug
 
-    def test_ltx23_style_label_unchanged_by_ltx25(self):
-        """Adding LTX-2.5 must not disturb the LTX-2.3 style label or file.
+    def test_ltx23_style_resolves_under_both_labels(self):
+        """The LTX-2.3 style answers to its new label and its former one.
 
         Style labels are persisted as plain strings inside saved ComfyUI
-        workflows, so renaming one silently breaks every workflow using it.
+        workflows, so the pre-catalog label has to keep resolving via the
+        catalog's ``aliases``.
         Mocks: none.
         """
-        assert "LTX-2.3 audio-video" in OUTPUT_STYLES
-        prompt = _load_composer_system_prompt("LTX-2.3 audio-video")
-        assert prompt.startswith("You are a prompt composer for LTX-2.3")
+        assert "LTX-2.3 – Video with Audio" in OUTPUT_STYLES
+        for label in ("LTX-2.3 – Video with Audio", "LTX-2.3 audio-video"):
+            prompt = _load_composer_system_prompt(label)
+            assert prompt.startswith("You are a prompt composer for LTX-2.3")
 
 
 # ==========================================================================

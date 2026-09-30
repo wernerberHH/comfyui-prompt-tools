@@ -7,6 +7,26 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Prompt catalog** — every dropdown value now comes from one data file,
+  `config/catalog.yaml.example`: the PromptHelper modes, the PromptComposer
+  output styles, the VisionPromptHelper modes, and the image / video models
+  the prompts are written for. Adding a mode or a model is one entry there
+  plus, where applicable, one template file; no code change. An optional
+  `config/catalog.yaml` (gitignored) is overlaid on the shipped file per
+  `id` — same `id` replaces the listed fields, a new `id` is appended,
+  `enabled: false` hides an entry — following the same pattern as
+  `endpoints.yaml` and the `.txt.example` templates. The catalog is
+  validated on load and fails with a message naming the offending section,
+  entry and field.
+- **`target_model` input on VisionPromptHelper** (optional, default
+  `Generic`) — decides how the generated prompt addresses the reference
+  images: `image 1` for FLUX Kontext and FLUX.2, `Picture 1` for
+  Qwen-Image-Edit 2511 and Krea 2, `<image1>` for Qwen-Image 2.1. Templates
+  write `{img1}` / `{img2}` and the loader renders the selected model's
+  wording. The dropdown lists only models that reference images inside the
+  prompt at all. Wire the images in the same order as on the image model.
+- `docs/architecture/prompt-catalog.md` with diagrams, and a rewritten
+  `docs/adding-a-mode.md` covering the catalog-entry recipe.
 - Two new PromptComposer output styles for Pony Diffusion XL:
   `Pony photoreal` (photoreal merges) and `Pony anime/illustrious`
   (Illustrious XL anime models). Both emit tag-based prompts anchored on
@@ -25,6 +45,35 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Two matching PromptComposer output styles, `Krea 2 natural language`
   and `LTX-2.5 multi-shot`, so both formats are also available at the end
   of a describe-and-compose pipeline.
+
+### Changed
+
+- **Mode and style labels renamed** to put the target model first, e.g.
+  `Random Character (Pony)` → `SDXL Pony – Random Character`,
+  `FLUX.2 natural language` → `FLUX.2 – Natural Language`. Every former
+  label is kept as an `alias` in the catalog and keeps resolving, so saved
+  workflows continue to run — the three nodes declare `VALIDATE_INPUTS` for
+  `mode` / `output_style` / `target_model` so ComfyUI delegates the check to
+  the catalog instead of rejecting a value that is no longer in the list.
+  Whether the ComfyUI frontend keeps an old widget value when *loading* a
+  saved workflow is a UI behaviour and unaffected by this. VisionPromptHelper
+  mode labels are unchanged.
+- **Describe-mode prompts no longer reference an input image.** The
+  `Always reference "image 1" at the start` rule is gone from all nine
+  describe templates: their output is a snippet that a composer pastes into
+  a larger prompt, where `image 1` addressed the wrong picture. Edit-mode
+  output is unchanged when `target_model` is left at `Generic`.
+- Instructions telling the vision LLM which input image is which now read
+  "the first image" / "the second image" instead of `IMAGE 1` / `image 1`,
+  keeping them lexically distinct from the reference tokens the generated
+  prompt has to carry.
+- `MODE_TO_FILE`, `AVAILABLE_MODES`, `OUTPUT_STYLES`,
+  `VISION_MODE_TO_FILE`, `AVAILABLE_VISION_MODES` and `TWO_IMAGE_MODES`
+  are now derived from the catalog. They keep their names and shape for
+  external callers.
+- `get_vision_system_prompt()` and `prompts.render_template()` take an
+  optional `target_model` argument. PromptHelper and PromptComposer always
+  render with `Generic`, so their system prompts are unchanged.
 
 ## [1.1.4] — 2026-06-16
 

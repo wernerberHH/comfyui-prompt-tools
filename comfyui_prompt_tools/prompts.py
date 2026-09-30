@@ -1,11 +1,15 @@
 """Loader for system prompt templates.
 
-System prompts live in ``system_prompts/<mode_id>.txt`` where ``mode_id`` is the
-filename-safe identifier of the mode. The visible label (with parentheses,
-slashes etc.) is mapped to the file name via :data:`MODE_TO_FILE`.
+System prompts live in ``system_prompts/<template>.txt`` where ``template`` is
+the basename registered for the mode in the prompt catalog (see
+:mod:`catalog`). The visible label — and every former label kept as an alias —
+resolves to that basename through the catalog, so renaming a label or adding a
+mode is a data change, not a code change.
 
 Each prompt file may contain the placeholder ``{shared_rules}`` which gets
-replaced by the contents of ``_shared_rules.txt``.
+replaced by the contents of ``_shared_rules.txt``, and ``{img1}`` / ``{img2}``
+placeholders which :func:`catalog.render_image_refs` turns into the image
+reference wording of the selected target model.
 
 User vs. template fallback
 --------------------------
@@ -38,24 +42,25 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-_PROMPTS_DIR = Path(__file__).parent / "system_prompts"
+from .catalog import (
+    PROMPTS_DIR,
+    load_catalog,
+    render_image_refs,
+    resolve_helper_mode,
+    resolve_target_model,
+    resolve_template_path,
+)
+
+#: Module attribute so tests can redirect the prompt library at a temp dir.
+_PROMPTS_DIR = PROMPTS_DIR
 logger = logging.getLogger(__name__)
 
-# Mapping: visible mode label -> filename (without .txt)
+# Derived views on the catalog, kept for callers that used to read the
+# hard-coded dictionaries. The catalog is the source of truth; these are
+# snapshots taken at import time.
+#: Mapping: visible mode label -> template basename (without .txt)
 MODE_TO_FILE: Dict[str, str] = {
-    "FLUX Kontext (Scene Edit)":      "flux_kontext_scene_edit",
-    "FLUX Kontext (Couple Scene)":    "flux_kontext_couple_scene",
-    "Qwen Image Edit (Couple Scene)": "qwen_image_edit_couple_scene",
-    "FLUX Text-to-Image":             "flux_text_to_image",
-    "Z-Image Text-to-Image":          "zimage_text_to_image",
-    "SDXL Photorealistic":            "sdxl_photorealistic",
-    "SDXL Pony/Illustrious":          "sdxl_pony_illustrious",
-    "Random Character (Z-Image)":     "random_character_zimage",
-    "Random Character (Pony)":        "random_character_pony",
-    "LTX-2.3 Video (Audio-Video)":    "ltx2_video",
-    "Krea 2 Text-to-Image":           "krea2_text_to_image",
-    "LTX-2.5 Video (Multi-Shot Audio-Video)": "ltx25_video",
-    "Custom System Prompt":           "custom_system_prompt",
+    entry.label: entry.template for entry in load_catalog().prompt_helper_modes
 }
 
 AVAILABLE_MODES = list(MODE_TO_FILE.keys())
@@ -156,13 +161,7 @@ def _resolve_prompt_path(name: str) -> Optional[Path]:
 
     The user file always wins so locally edited prompts survive ``git pull``.
     """
-    user_path = _PROMPTS_DIR / f"{name}.txt"
-    if user_path.is_file():
-        return user_path
-    example_path = _PROMPTS_DIR / f"{name}.txt.example"
-    if example_path.is_file():
-        return example_path
-    return None
+    return resolve_template_path(name, _PROMPTS_DIR)
 
 
 def _prompt_file_exists(name: str) -> bool:
@@ -195,34 +194,46 @@ def _resolve_template(file_base: str, model_name: Optional[str]) -> str:
     return _read_file(file_base)
 
 
-def render_template(file_base: str, model_name: Optional[str] = None) -> str:
+def render_template(
+    file_base: str,
+    model_name: Optional[str] = None,
+    target_model: Optional[str] = None,
+) -> str:
     """Return a fully rendered system-prompt template for ``file_base``.
 
-    Applies the per-model override cascade (see module docstring) and
-    substitutes the ``{shared_rules}`` placeholder. This is the shared
-    entry point for :func:`get_system_prompt`, the vision-prompt loader,
-    and the composer-prompt loader so that all three honour the same
-    cascade and substitution rules.
+    Applies the per-model override cascade (see module docstring), then
+    substitutes ``{shared_rules}`` and finally the ``{imgN}`` image
+    references. This is the shared entry point for
+    :func:`get_system_prompt`, the vision-prompt loader, and the
+    composer-prompt loader so that all three honour the same cascade and
+    substitution rules.
+
+    ``target_model`` is a target-model label from the catalog; ``None``
+    means the neutral ``Generic`` wording.
 
     Raises ``FileNotFoundError`` if neither the override nor the default
-    file exists.
+    file exists, and ``KeyError`` for an unknown ``target_model``.
     """
     template = _resolve_template(file_base, model_name)
     if "{shared_rules}" in template:
         template = template.replace("{shared_rules}", _read_file("_shared_rules"))
-    return template
+    return render_image_refs(template, resolve_target_model(target_model))
 
 
 def get_system_prompt(mode: str, model_name: Optional[str] = None) -> str:
     """Return the rendered system prompt for the given mode label.
+
+    ``mode`` may be the current label or any former label kept as an alias
+    in the catalog, so saved workflows keep resolving after a rename.
 
     If ``model_name`` is provided and matches a family in
     :data:`MODEL_FAMILY_PATTERNS`, a model-specific override file
     (``<mode_id>.<family>.txt``) takes precedence over the default. Falls
     back to the default if no override exists or the family is unknown.
 
+    Image references render with the neutral ``Generic`` wording — the
+    PromptHelper has no target-model selector of its own.
+
     Raises ``KeyError`` for unknown modes.
     """
-    if mode not in MODE_TO_FILE:
-        raise KeyError(f"Unknown prompt mode: {mode}")
-    return render_template(MODE_TO_FILE[mode], model_name)
+    return render_template(resolve_helper_mode(mode).template, model_name)
