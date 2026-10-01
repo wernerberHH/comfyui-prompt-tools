@@ -174,6 +174,66 @@ git pull
 # restart your ComfyUI instance to reload the nodes
 ```
 
+### Local copies can hide the updated templates
+
+System prompts resolve `system_prompts/<name>.txt` (your copy, gitignored)
+*before* `system_prompts/<name>.txt.example` (the shipped template). That is
+what keeps your edits through a `git pull` — and it means an update cannot
+reach a template you have a copy of. Neither `git pull` nor the
+ComfyUI-Manager removes your `.txt` files, by design.
+
+So after an update, the nodes check their own template directory once at
+startup and summarise what they find in the ComfyUI log:
+
+```
+Local system-prompt copies take precedence over the shipped templates,
+so these files hide the versions that came with the package:
+
+  outdated-copy (2) — unchanged copies of an older shipped template — they
+  hide the current one. Delete them to pick up the shipped version.
+    .../system_prompts/vision_outfit_transfer.txt
+    .../system_prompts/_shared_rules.txt
+
+  customized (1) — your own edits — the shipped template stays hidden.
+  Re-apply your changes on top of the new .txt.example, or delete the copy
+  to take the shipped version as it is.
+    .../system_prompts/vision_combined_edit.txt  [no {imgN} placeholders —
+      the target_model setting has no effect on this mode]
+
+  Also present: 17 copies are identical to the current shipped template
+  (nothing to do); 1 local override has no shipped counterpart (left alone).
+
+  No file was changed or deleted. See docs/system-prompt-overrides.md for
+  how to clean up.
+```
+
+What the labels mean, and what to do:
+
+| Label | What it is | What to do |
+|---|---|---|
+| `outdated-copy` | An unchanged copy of a template from an earlier release | Delete the `.txt`. You lose nothing — you never edited it — and the improved template takes over. |
+| `customized` | A copy you actually edited | Your call. To pick up the improvements, diff your `.txt` against the new `.txt.example` and re-apply your changes; to drop them, delete the `.txt`. |
+| `stale-shipped-override` | A model-family override (`<name>.<family>.txt`) left behind by an older release | Delete it unless you specifically want that older wording — it hides the current base template for that model family. |
+| `identical` | A copy with the same content as the current template | Nothing. Counted, not listed. |
+| `local override` | A `<name>.<family>.txt` you wrote yourself | Nothing. It is yours; there is no shipped version it could be behind. |
+| `unverified` | The comparison could not be made | Only happens if `system_prompts/shipped_hashes.json` is missing or unreadable. The nodes work normally. |
+
+Cleaning up is plain file deletion — the check never touches a file itself:
+
+```bash
+cd /path/to/ComfyUI/custom_nodes/comfyui-prompt-tools/comfyui_prompt_tools/system_prompts
+# compare one of your copies against the shipped template first
+diff vision_outfit_transfer.txt vision_outfit_transfer.txt.example
+# then remove the copy you no longer want to keep
+rm vision_outfit_transfer.txt
+# restart ComfyUI
+```
+
+Each node also names the file its system prompt came from per run:
+PromptComposer and VisionPromptHelper in their `debug_info` output,
+PromptHelper in its log line — e.g.
+`Template: vision_outfit_transfer.txt (local copy, customized)`.
+
 ## Modes (PromptHelper)
 
 | Mode | Output style | Use case |
@@ -320,8 +380,10 @@ comfyui-prompt-tools/
 │   │   ├── vision_prompt_helper.py
 │   │   ├── prompt_composer.py
 │   │   └── text_mux.py
+│   ├── template_status.py            reports local copies hiding templates
 │   └── system_prompts/
 │       ├── _shared_rules.txt.example
+│       ├── shipped_hashes.json       digests of every template ever shipped
 │       └── <mode>.txt.example        one template per mode (committed)
 │                                      copy to <mode>.txt to customise locally
 ├── config/
@@ -331,6 +393,8 @@ comfyui-prompt-tools/
 ├── docs/                             pipeline patterns, mode-adding guide,
 │   │                                  system-prompt override docs
 │   └── architecture/                 prompt-catalog architecture + diagrams
+├── scripts/
+│   └── update_shipped_hashes.py      regenerate shipped_hashes.json
 └── tests/unit/                       hermetic unit tests
 ```
 

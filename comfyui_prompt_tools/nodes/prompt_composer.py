@@ -20,6 +20,7 @@ from ..catalog import composer_style_labels, load_catalog, resolve_composer_styl
 from ..engines import OllamaError, OpenAIError
 from ..post_processing import strip_llm_noise
 from ..prompts import render_template
+from ..template_status import describe_resolved_source
 from .base_prompt_node import BasePromptNode
 from .catalog_validation import validation_message
 
@@ -204,6 +205,11 @@ class PromptComposer(BasePromptNode):
         # ---- 2. Build system prompt and user message -------------------
         try:
             system_prompt = _load_composer_system_prompt(output_style, model_name=model)
+            # Names the file the prompt actually came from, so debug_info
+            # shows when a local copy shadows the shipped template.
+            template_source = describe_resolved_source(
+                resolve_composer_style(output_style).template, model_name=model
+            )
         except KeyError as exc:
             print(f"[PromptComposer] {exc}")
             return (f"ERROR: {exc}", f"Style: {output_style} | Error: {exc}")
@@ -255,7 +261,8 @@ class PromptComposer(BasePromptNode):
 
         debug_info = (
             f"Engine: {engine} | Model: {model} | Style: {output_style} | "
-            f"Inputs: {len(inputs)} | Latency: {latency:.1f}s"
+            f"Inputs: {len(inputs)} | Latency: {latency:.1f}s | "
+            f"Template: {template_source}"
         )
         if keywords:
             debug_info += (

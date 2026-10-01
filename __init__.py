@@ -35,4 +35,12 @@ WEB_DIRECTORY = "./web"
 from .comfyui_prompt_tools.web_api import register_routes as _register_routes
 _register_routes()
 
+# Report local system_prompts/*.txt copies that hide a shipped template —
+# one summary block, once per process. Read-only: nothing is changed,
+# renamed or deleted, and any problem inside is logged, not raised.
+from .comfyui_prompt_tools.template_status import (
+    report_local_copies as _report_local_copies,
+)
+_report_local_copies()
+
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]

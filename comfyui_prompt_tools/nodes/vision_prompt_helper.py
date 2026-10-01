@@ -28,6 +28,7 @@ from ..catalog import (
 )
 from ..engines import OllamaError, OpenAIError
 from ..image_io import tensor_to_b64
+from ..template_status import describe_resolved_source
 from ..vision_prompts import get_vision_system_prompt, mode_uses_two_images
 from .base_prompt_node import BasePromptNode
 from .catalog_validation import validation_message
@@ -141,11 +142,17 @@ class VisionPromptHelper(BasePromptNode):
             )
 
         # ---- 2. Build system prompt ------------------------------------
+        # ``template_source`` names the file the prompt actually came from,
+        # so debug_info shows when a local copy shadows the shipped template.
         if custom_system_prompt.strip():
             system_prompt = custom_system_prompt.strip()
+            template_source = "(custom_system_prompt input)"
         else:
             system_prompt = get_vision_system_prompt(
                 mode, model_name=model, target_model=target.label
+            )
+            template_source = describe_resolved_source(
+                resolve_vision_mode(mode).template, model_name=model
             )
 
         user_message = (intent.strip() or "no specific intent") + " /no_think"
@@ -193,7 +200,8 @@ class VisionPromptHelper(BasePromptNode):
             f"Engine: {engine} | Model: {model} | Mode: {mode} | "
             f"Target: {target.label} | "
             f"Images: {len(images_b64)} | InTokens: ~{in_tokens_est} | "
-            f"Latency: {latency:.1f}s"
+            f"Latency: {latency:.1f}s | "
+            f"Template: {template_source}"
         )
 
         print(f"[VisionPromptHelper] {debug_info}")

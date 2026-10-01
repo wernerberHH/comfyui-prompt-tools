@@ -76,6 +76,24 @@ Length budget: 100–300 words for the template body. Existing files
 (`flux_text_to_image.txt.example`, `zimage_text_to_image.txt.example`,
 `random_character_pony.txt.example`) are good references.
 
+### Then regenerate the digest history
+
+Any time you add, change or remove a `*.txt.example`, run:
+
+```bash
+python3 scripts/update_shipped_hashes.py
+```
+
+This rewrites `comfyui_prompt_tools/system_prompts/shipped_hashes.json`,
+the list of digests of every template version this package has ever
+shipped. The startup check uses it to tell a user's untouched copy of an
+older template (safe to delete) from a copy they actually edited — see
+[`system-prompt-overrides.md`](system-prompt-overrides.md#after-changing-a-shipped-template-maintainers).
+
+Commit the regenerated file **together with** the template change.
+`tests/unit/test_shipped_hashes.py` fails until you do, and names the
+script in its message.
+
 ### Referring to reference images
 
 Never write `image 1` or `Picture 1` into a template. Target models
@@ -247,3 +265,7 @@ Run the suite from the repo root:
 ```bash
 python3 -m pytest tests/unit -q
 ```
+
+If `test_shipped_hashes.py` fails for your new or changed template, the
+digest history is simply out of date — run
+`python3 scripts/update_shipped_hashes.py` (Step 2) and commit the result.
