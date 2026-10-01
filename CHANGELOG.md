@@ -5,6 +5,44 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Upgrade notice — read before updating
+
+**Your own system-prompt files are kept exactly as they are.** If you ever
+created a `system_prompts/<name>.txt`, this update does not touch it. A local
+`.txt` always wins over the shipped `.txt.example`, so that mode keeps its old
+behaviour:
+
+- it still uses the old wording, including the old image references
+  (`image 1`), even if you pick a different `target_model`;
+- the new `target_model` setting has no effect on it — it only rewrites the
+  `{img1}` / `{img2}` placeholders the new templates use;
+- a describe mode still opens its snippet with an image reference (the old
+  templates said *always reference "image 1" once at the start*), which is
+  wrong once that snippet is pasted into a larger prompt.
+
+If you never created local copies, there is nothing to do. Modes without a
+local copy use the new templates automatically.
+
+**How to find out.** After the restart, the ComfyUI log lists every local copy
+that hides a shipped template. Open the log inside ComfyUI with the command
+*Toggle Logs Bottom Panel*. Each node also names the file it used per run:
+PromptComposer and VisionPromptHelper in their `debug_info` output,
+PromptHelper in its log line — e.g.
+`Template: vision_outfit_transfer.txt (local copy, customized)`.
+
+**What to do.** Delete the copies reported as `outdated-copy`. They are
+unchanged old versions, so you lose nothing. For copies reported as
+`customized`, re-apply your changes on top of the new `.txt.example`, and use
+`{img1}` / `{img2}` wherever the prompt names an image. Nothing is deleted for
+you — the check only reads.
+
+**Renamed dropdown labels.** Mode and output-style labels were renamed.
+Existing workflows keep working: the old labels are still accepted, and a
+workflow is updated to the new ones as it loads. But once you save a workflow
+with this version it contains the new labels, and loading that file in an
+older version (1.1.x) fails with *"Value not in list"*. Keep a copy of your
+workflows if you may need to go back.
+
 ### Added
 
 - **New VisionPromptHelper mode `Outpaint (Zoom Out)`** — turns a crop of a
