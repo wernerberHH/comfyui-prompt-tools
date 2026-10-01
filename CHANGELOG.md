@@ -7,6 +7,21 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **New VisionPromptHelper mode `Outpaint (Zoom Out)`** — turns a crop of a
+  person (passport-style head shot, chest-up, waist-up) into an edit prompt
+  that extends the frame to a full-body photograph. The mode exists because
+  an image-editing model invents everything outside the original crop and
+  follows the prompt literally: a hedged guess ("probably a knee-length
+  dress") comes back knee-length, and a collar left unexplained comes back
+  as a long shirt over bare legs. The template therefore makes the LLM
+  describe a *complete* person — the zoom-out order first, then the identity
+  markers that have to survive the larger frame, a build in words rather
+  than centimetres or clothing sizes, the visible garments **plus** every
+  piece the crop does not show down to the footwear, and the surrounding
+  scene continued outward with the same light, colour grade and camera look.
+  The user intent (German or English) overrides all of it and can prescribe
+  the build, the missing garments, the shoes, the pose or the framing
+  ("ab Knie"). One image, `kind: edit`, no new node input.
 - **Local system-prompt copies are reported at startup.** A
   `system_prompts/<name>.txt` always wins over the shipped
   `<name>.txt.example` — that is what keeps local edits through a

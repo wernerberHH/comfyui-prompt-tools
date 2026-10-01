@@ -1,4 +1,4 @@
-"""Tests for the expanded 15-mode vision registry and VisionPromptHelper routing.
+"""Tests for the vision-mode registry and VisionPromptHelper routing.
 
 Covers:
 - inventory: every registered mode has a system_prompt file on disk
@@ -36,6 +36,7 @@ EDIT_MODES = [
     "Background Change",
     "Pose Change",
     "Combined Edit",
+    "Outpaint (Zoom Out)",
 ]
 DESCRIBE_MODES = [
     "Describe Picture",
