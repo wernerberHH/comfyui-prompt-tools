@@ -30,6 +30,7 @@ from ..engines import OllamaError, OpenAIError
 from ..image_io import tensor_to_b64
 from ..vision_prompts import get_vision_system_prompt, mode_uses_two_images
 from .base_prompt_node import BasePromptNode
+from .catalog_validation import validation_message
 
 
 class VisionPromptHelper(BasePromptNode):
@@ -55,9 +56,17 @@ class VisionPromptHelper(BasePromptNode):
             },
             "optional": {
                 "image_2":              ("IMAGE",),
+                "custom_system_prompt": ("STRING", {"multiline": True, "default": ""}),
+                # NEW INPUTS GO LAST — never between existing ones. The
+                # ComfyUI frontend maps a saved workflow's widgets_values by
+                # POSITION, not by name, so inserting an input here would
+                # shift every value after it. target_model sat before
+                # custom_system_prompt in the first draft of this package and
+                # swallowed the saved custom prompt of every existing node.
+                # Appended, a pre-existing 9-value node keeps its mapping and
+                # simply has no stored value for target_model -> Generic.
                 "target_model":         (image_target_model_labels(),
                                         {"default": default_target_model_label()}),
-                "custom_system_prompt": ("STRING", {"multiline": True, "default": ""}),
             },
         }
 
@@ -74,20 +83,22 @@ class VisionPromptHelper(BasePromptNode):
         Naming ``mode`` and ``target_model`` here makes ComfyUI skip its own
         "Value not in list" check for both inputs (see the guard in
         ``execution.py``), which is what lets a workflow saved with an old
-        label still queue. Unknown values are rejected here instead, with
-        the known ones listed.
+        label still queue. Unknown values are rejected here instead.
 
         ``target_model`` needs a default: ComfyUI only passes the inputs a
         workflow actually stores, and a workflow saved before this input
         existed has none — without the default that call would raise
-        ``TypeError`` during validation. ``None`` means ``Generic``.
+        ``TypeError`` during validation. Unset means ``Generic``.
+
+        Each message names the input it belongs to. ComfyUI attaches a
+        single non-``True`` return to *every* input in this signature (it
+        loops ``for x in input_filtered`` over one result), so without the
+        prefix a bad ``target_model`` read as if ``mode`` were the problem.
         """
-        try:
-            resolve_vision_mode(mode)
-            resolve_image_target_model(target_model)
-        except KeyError as exc:
-            return str(exc)
-        return True
+        return validation_message(
+            ("mode", resolve_vision_mode, mode),
+            ("target_model", resolve_image_target_model, target_model),
+        )
 
     def generate(
         self,

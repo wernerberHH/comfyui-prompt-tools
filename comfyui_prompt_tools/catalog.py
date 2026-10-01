@@ -525,10 +525,22 @@ def resolve_vision_mode(value: str) -> VisionMode:
     return load_catalog().vision_mode(value)
 
 
+def is_unset(value: Any) -> bool:
+    """True for the values that mean "this optional input has no value".
+
+    ``None`` is what Python gives us for an absent argument. The empty
+    string is what the ComfyUI frontend can deliver: it maps saved
+    ``widgets_values`` by POSITION, so a workflow saved before an input
+    existed — or one whose JSON was hand-edited — can hand a combo an empty
+    string. An unset optional means "use the default", not "invalid".
+    """
+    return value is None or (isinstance(value, str) and not value.strip())
+
+
 def resolve_target_model(value: Optional[str]) -> TargetModel:
-    """Label or alias -> target model. ``None`` yields the default."""
+    """Label or alias -> target model. Unset yields the default."""
     catalog = load_catalog()
-    if value is None:
+    if is_unset(value):
         return catalog.default_target_model
     return catalog.target_model(value)
 
@@ -536,7 +548,7 @@ def resolve_target_model(value: Optional[str]) -> TargetModel:
 def resolve_image_target_model(value: Optional[str]) -> TargetModel:
     """Like :func:`resolve_target_model` but rejects text-only models."""
     catalog = load_catalog()
-    if value is None:
+    if is_unset(value):
         return catalog.default_target_model
     return catalog.image_target_model(value)
 

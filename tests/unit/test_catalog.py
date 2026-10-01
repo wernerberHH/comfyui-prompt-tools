@@ -681,6 +681,101 @@ class TestNodeValidateInputs:
         assert "takes no reference images" in result
 
 
+class TestValidationMessageAttribution:
+    """Each message must name the input it belongs to.
+
+    ComfyUI attaches a single non-``True`` return to *every* input in the
+    ``VALIDATE_INPUTS`` signature — it loops ``for x in input_filtered``
+    over one result, so one return value cannot say "mode is fine,
+    target_model is not". Observed in Bernd's smoke test: a bad
+    ``target_model`` surfaced as ``mode - Unknown target model: ''``.
+    The fix is in the message, so these tests pin the message.
+    """
+
+    def test_bad_target_model_message_names_target_model_only(self):
+        result = VisionPromptHelper.VALIDATE_INPUTS("Hair Change", "Nope")
+        assert result.startswith("target_model:")
+        assert "mode:" not in result
+        assert "vision prompt mode" not in result
+
+    def test_bad_mode_message_names_mode_only(self):
+        result = VisionPromptHelper.VALIDATE_INPUTS("Nope", "Generic")
+        assert result.startswith("mode:")
+        assert "target_model:" not in result
+
+    def test_two_bad_inputs_are_both_named(self):
+        result = VisionPromptHelper.VALIDATE_INPUTS("Nope", "Alsonope")
+        assert "mode: " in result
+        assert "target_model: " in result
+
+    def test_single_input_nodes_name_their_input(self):
+        assert PromptHelper.VALIDATE_INPUTS("Nope").startswith("mode:")
+        assert PromptComposer.VALIDATE_INPUTS("Nope").startswith("output_style:")
+
+    def test_message_is_not_repr_quoted(self):
+        """``str()`` on a ``KeyError`` is ``repr()`` of its argument, which
+        wrapped the whole message in quotes and escaped the inner ones —
+        the smoke-test log read ``Unknown target model: \x27\x27``."""
+        result = VisionPromptHelper.VALIDATE_INPUTS("Hair Change", "Nope")
+        # The individual known values are legitimately quoted; what must not
+        # happen is the whole message being wrapped in one pair of quotes.
+        reason = result.split("target_model: ", 1)[1]
+        assert not reason.startswith("'")
+        assert "\\x27" not in result
+        assert "Unknown target model: 'Nope'" in result
+
+
+class TestCatalogWidgetAliases:
+    """The map the frontend uses to migrate stale combo values on load."""
+
+    def test_map_covers_the_three_catalog_backed_nodes(self):
+        from comfyui_prompt_tools.web_api import get_catalog_widget_aliases
+
+        aliases = get_catalog_widget_aliases()
+        assert set(aliases) <= {"PromptHelper", "PromptComposer", "VisionPromptHelper"}
+        assert aliases["PromptHelper"]["mode"]
+        assert aliases["PromptComposer"]["output_style"]
+
+    @pytest.mark.parametrize("new,old", HELPER_LABEL_TABLE)
+    def test_every_helper_alias_maps_to_its_current_label(self, new, old):
+        from comfyui_prompt_tools.web_api import get_catalog_widget_aliases
+
+        assert get_catalog_widget_aliases()["PromptHelper"]["mode"][old] == new
+
+    @pytest.mark.parametrize("new,old", COMPOSER_LABEL_TABLE)
+    def test_every_composer_alias_maps_to_its_current_label(self, new, old):
+        from comfyui_prompt_tools.web_api import get_catalog_widget_aliases
+
+        aliases = get_catalog_widget_aliases()["PromptComposer"]["output_style"]
+        assert aliases[old] == new
+
+    def test_current_labels_are_not_in_the_map(self):
+        """Only former labels belong in it — a current label needs no rewrite
+        and listing it would make the frontend churn on every load."""
+        from comfyui_prompt_tools.web_api import get_catalog_widget_aliases
+
+        aliases = get_catalog_widget_aliases()
+        for label in catalog_mod.helper_mode_labels():
+            assert label not in aliases["PromptHelper"]["mode"]
+        for label in catalog_mod.composer_style_labels():
+            assert label not in aliases["PromptComposer"]["output_style"]
+
+    def test_widgets_without_aliases_are_omitted(self):
+        """Vision modes and target models were never renamed, so the
+        payload should not carry empty maps for them."""
+        from comfyui_prompt_tools.web_api import get_catalog_widget_aliases
+
+        assert "VisionPromptHelper" not in get_catalog_widget_aliases()
+
+    def test_broken_catalog_degrades_to_an_empty_map(self, isolated_catalog, tmp_path, monkeypatch):
+        """A broken catalog must not also take down the settings UI."""
+        from comfyui_prompt_tools import web_api
+
+        monkeypatch.setattr(catalog_mod, "_EXAMPLE_FILE", tmp_path / "gone.yaml")
+        monkeypatch.setattr(catalog_mod, "_cache", None)
+        assert web_api.get_catalog_widget_aliases() == {}
+
+
 # ---------------------------------------------------------------------------
 # Node dropdowns come from the catalog
 # ---------------------------------------------------------------------------

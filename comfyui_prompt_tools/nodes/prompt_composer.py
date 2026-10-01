@@ -21,6 +21,7 @@ from ..engines import OllamaError, OpenAIError
 from ..post_processing import strip_llm_noise
 from ..prompts import render_template
 from .base_prompt_node import BasePromptNode
+from .catalog_validation import validation_message
 
 # Derived views on the catalog, kept for callers that used to read the
 # hard-coded lists. The catalog is the source of truth; these are snapshots
@@ -172,11 +173,9 @@ class PromptComposer(BasePromptNode):
         is what lets a workflow saved with an old label still queue. Unknown
         values are rejected here instead, with the known ones listed.
         """
-        try:
-            resolve_composer_style(output_style)
-        except KeyError as exc:
-            return str(exc)
-        return True
+        return validation_message(
+            ("output_style", resolve_composer_style, output_style)
+        )
 
     def compose(
         self,

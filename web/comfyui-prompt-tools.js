@@ -32,10 +32,11 @@ const PROVIDER_DEFAULT_URL = {
 };
 
 const API = {
-    status:   "/comfyui-prompt-tools/status",
-    save:     "/comfyui-prompt-tools/save",
-    test:     "/comfyui-prompt-tools/test",
-    discover: "/comfyui-prompt-tools/discover",
+    status:         "/comfyui-prompt-tools/status",
+    save:           "/comfyui-prompt-tools/save",
+    test:           "/comfyui-prompt-tools/test",
+    discover:       "/comfyui-prompt-tools/discover",
+    catalogAliases: "/comfyui-prompt-tools/catalog-aliases",
 };
 
 // ---------------- HTTP helpers -------------------------------------------
@@ -237,5 +238,82 @@ app.registerExtension({
         } catch (e) {
             console.warn(`[Prompt Tools] Backend status check failed: ${e}`);
         }
+    },
+});
+
+// ---------------- Catalog label migration --------------------------------
+//
+// Mode and style labels live in config/catalog.yaml.example and were
+// renamed in v1.2.0. A saved workflow stores the label as a plain string,
+// so an existing node comes back carrying the old one.
+//
+// The server still accepts it — each node's VALIDATE_INPUTS resolves label
+// OR alias through the catalog — but the widget would display a value that
+// is no longer in its list: red border, and the next save would persist
+// the stale name. So on load we rewrite old -> current.
+//
+// The map comes from the backend because only the catalog knows the
+// aliases; /object_info carries just the current list. If the fetch fails
+// (older backend, server not reachable), migration is simply skipped —
+// the workflow still runs.
+
+let _aliasMap = null;
+
+async function loadAliasMap() {
+    if (_aliasMap !== null) return _aliasMap;
+    try {
+        _aliasMap = await apiGet(API.catalogAliases);
+    } catch (e) {
+        console.warn(`[Prompt Tools] Label migration unavailable: ${e}`);
+        _aliasMap = {};
+    }
+    return _aliasMap;
+}
+
+// Exported shape for the unit test and for debugging from the console:
+// returns the list of {widget, from, to} rewrites a node would receive.
+export function planWidgetMigration(nodeType, widgets, aliasMap) {
+    const perWidget = (aliasMap || {})[nodeType];
+    if (!perWidget || !widgets) return [];
+    const plan = [];
+    for (const widget of widgets) {
+        const map = perWidget[widget?.name];
+        if (!map) continue;
+        const target = map[widget.value];
+        // Only rewrite a value that is actually a known former label.
+        // Anything else (current label, user-typed junk) is left alone so
+        // the node's own validation reports it.
+        if (target !== undefined && target !== widget.value) {
+            plan.push({ widget: widget.name, from: widget.value, to: target });
+        }
+    }
+    return plan;
+}
+
+app.registerExtension({
+    name: "comfyui-prompt-tools.catalog-aliases",
+
+    async setup() {
+        // Warm the cache so the first loaded graph does not race the fetch.
+        await loadAliasMap();
+    },
+
+    // Fires per node restored from saved workflow data, after its widgets
+    // exist and carry the stored values. nodeCreated is the wrong hook —
+    // that one sees freshly placed nodes with their defaults.
+    async loadedGraphNode(node) {
+        const aliasMap = await loadAliasMap();
+        const nodeType = node?.comfyClass || node?.type;
+        const plan = planWidgetMigration(nodeType, node?.widgets, aliasMap);
+        if (!plan.length) return;
+        for (const step of plan) {
+            const widget = node.widgets.find((w) => w?.name === step.widget);
+            if (widget) widget.value = step.to;
+            console.log(
+                `[Prompt Tools] ${nodeType}.${step.widget}: ` +
+                `"${step.from}" -> "${step.to}" (renamed in v1.2.0)`
+            );
+        }
+        app.graph?.setDirtyCanvas?.(true, true);
     },
 });

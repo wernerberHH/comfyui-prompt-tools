@@ -162,9 +162,51 @@ a `VALIDATE_INPUTS` classmethod naming `mode` / `output_style` /
 check for those inputs and delegate to the catalog. **Never remove an
 alias once it has shipped.**
 
-The label in a *loaded* workflow is a separate question: whether the
-ComfyUI frontend keeps a widget value that is no longer in the list can
-only be checked in the UI.
+The widget in a *loaded* workflow is handled too: the frontend
+extension in `web/` fetches
+`GET /comfyui-prompt-tools/catalog-aliases` and rewrites a stale value to
+its current label as each node is restored, so the widget never shows a
+value that is missing from its list and the next save carries the current
+name. Add the alias and both halves follow automatically.
+
+## Adding a node input — always at the end
+
+This is a separate rule from everything above, and it is the one that
+bites hardest. **A new input goes last in `INPUT_TYPES`, never between
+existing ones.**
+
+A saved ComfyUI workflow does not store widget names. Each node is
+persisted as a flat `widgets_values` array, and on load the values are
+handed to the node's widgets *in order*. Insert an input in the middle
+and every value after it lands on the wrong widget, in every workflow
+anyone ever saved.
+
+It happened in this package. `target_model` was first declared before
+`custom_system_prompt` on VisionPromptHelper. Existing nodes store nine
+values ending in the custom prompt, so on load that prompt was handed to
+`target_model`: the node either failed validation with
+`Unknown target model: ''` or sent the user's entire system prompt as a
+target-model name — and `custom_system_prompt` came up empty.
+
+Rules that follow from it:
+
+- Append. Order inside `required` and `optional` is the widget order
+  (`required` first), so appending to `optional` is the safe spot.
+- Give the new input a sane default and treat "unset" as that default.
+  `None` *and* the empty string both mean "not set" — a positional shift
+  or a hand-edited workflow can deliver either.
+- `forceInput: True` inputs and link-only types (`IMAGE`, `LATENT`, …)
+  are sockets, not widgets, and never occupy a `widgets_values` slot. A
+  widget the *user* converted to an input does keep its slot.
+- Removing or reordering an input has the same effect as inserting one.
+  If it is unavoidable, it is a breaking change for saved workflows and
+  belongs in the CHANGELOG as one.
+
+`tests/unit/test_widget_positions.py` guards this: it reconstructs the
+frontend's positional mapping from `INPUT_TYPES` and asserts that the
+pre-v1.2.0 widget order is still an exact prefix of the current one for
+all three nodes. An API-level test cannot catch it — an API prompt is a
+dict keyed by input name.
 
 ## Step 5 — (optional) ship model-family overrides
 

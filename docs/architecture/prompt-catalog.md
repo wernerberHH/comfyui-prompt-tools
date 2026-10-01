@@ -163,9 +163,47 @@ returns a message listing the known values when it cannot. None of them
 declares `**kwargs`, which would switch off the built-in `min`/`max`
 checks for every other input as well.
 
-What this does *not* cover: whether the ComfyUI **frontend** keeps a
-widget value that is no longer in the dropdown when a saved workflow is
-loaded. That is a UI behaviour and has to be checked in the UI.
+ComfyUI attaches one non-`True` return to *every* input in the signature
+(`for x in input_filtered` over a single result), so a return value
+cannot say "this input is fine, that one is not". Every message therefore
+names its own input — otherwise a bad `target_model` reads as
+`mode - Unknown target model: ''`. The shared helper lives in
+`nodes/catalog_validation.py`.
+
+### The frontend half
+
+Server-side acceptance is only half the job. The frontend restores a
+widget from the saved value, and a value missing from the combo list
+shows as invalid and would be written back on the next save. So the
+extension in `web/` fetches `GET /comfyui-prompt-tools/catalog-aliases`
+— the catalog's former-to-current label map, which `/object_info` cannot
+provide because it carries only the current list — and rewrites stale
+values in its `loadedGraphNode` hook. Only strings that are known former
+labels are touched; anything else is left for the node's own validation
+to report. If the fetch fails, migration is skipped and the workflow
+still runs on the server-side aliases.
+
+## Widget order is part of the contract
+
+A saved workflow stores no widget names. Each node is a flat
+`widgets_values` array, mapped onto the node's widgets **by position** on
+load. Consequences:
+
+- **A new input is appended, never inserted.** `target_model` initially
+  sat before `custom_system_prompt` on VisionPromptHelper; existing nodes
+  store nine values ending in the custom prompt, so that prompt was
+  handed to `target_model` — validation failed with
+  `Unknown target model: ''`, or the whole system prompt travelled as a
+  target-model name while `custom_system_prompt` came up empty.
+- **Unset must mean default.** Both `None` (input absent) and `""`
+  (what a shift or a hand-edited workflow delivers) resolve to `Generic`.
+- `forceInput` inputs and link-only types (`IMAGE`, …) are sockets and
+  occupy no slot; a widget the user converted to an input keeps its slot.
+
+`tests/unit/test_widget_positions.py` reconstructs the positional mapping
+from `INPUT_TYPES` and asserts the pre-v1.2.0 order is still an exact
+prefix of the current one. API-level tests cannot catch this class of bug
+— an API prompt is a dict keyed by input name.
 
 ## Failure behaviour
 
@@ -197,4 +235,8 @@ Messages name the section, the entry id and the field.
 | `comfyui_prompt_tools/prompts.py` | template cascade + the three substitutions |
 | `comfyui_prompt_tools/vision_prompts.py` | vision-mode view on the catalog |
 | `comfyui_prompt_tools/nodes/*.py` | dropdowns and `VALIDATE_INPUTS` |
+| `comfyui_prompt_tools/nodes/catalog_validation.py` | shared `VALIDATE_INPUTS` message builder |
+| `comfyui_prompt_tools/web_api.py` | `/catalog-aliases` route for the frontend migration |
+| `web/comfyui-prompt-tools.js` | rewrites stale labels as nodes are loaded |
 | `tests/unit/test_catalog.py` | validation, overlay, aliases, `{imgN}`, describe-mode check |
+| `tests/unit/test_widget_positions.py` | the positional `widgets_values` mapping |

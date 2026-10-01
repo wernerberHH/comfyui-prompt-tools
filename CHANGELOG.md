@@ -25,8 +25,16 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   write `{img1}` / `{img2}` and the loader renders the selected model's
   wording. The dropdown lists only models that reference images inside the
   prompt at all. Wire the images in the same order as on the image model.
+- **Saved workflows are migrated to the renamed labels on load.** The
+  frontend rewrites a stale `mode` / `output_style` value to its current
+  label from the catalog's `aliases`, so the widget no longer shows a value
+  that is missing from its list and the next save carries the current name.
+  The map comes from a new `GET /comfyui-prompt-tools/catalog-aliases`
+  route; if it is unreachable, migration is skipped and the workflow still
+  runs.
 - `docs/architecture/prompt-catalog.md` with diagrams, and a rewritten
-  `docs/adding-a-mode.md` covering the catalog-entry recipe.
+  `docs/adding-a-mode.md` covering the catalog-entry recipe and the rule
+  that a new node input must always be appended, never inserted.
 - Two new PromptComposer output styles for Pony Diffusion XL:
   `Pony photoreal` (photoreal merges) and `Pony anime/illustrious`
   (Illustrious XL anime models). Both emit tag-based prompts anchored on
@@ -74,6 +82,9 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `get_vision_system_prompt()` and `prompts.render_template()` take an
   optional `target_model` argument. PromptHelper and PromptComposer always
   render with `Generic`, so their system prompts are unchanged.
+- An unset `target_model` — absent or empty — resolves to `Generic` instead
+  of being rejected, and each `VALIDATE_INPUTS` message now names the input
+  it belongs to rather than being attributed to all of them.
 
 ## [1.1.4] — 2026-06-16
 

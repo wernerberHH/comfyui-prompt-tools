@@ -15,6 +15,7 @@ from ..random_pools import (
     pick_from_pool,
 )
 from .base_prompt_node import BasePromptNode
+from .catalog_validation import validation_message
 
 #: Catalog id of the catch-all mode that takes its system prompt from the
 #: node's own text field instead of a template.
@@ -91,11 +92,7 @@ class PromptHelper(BasePromptNode):
         what lets a workflow saved with an old label still queue. Unknown
         values are rejected here instead, with the known ones listed.
         """
-        try:
-            resolve_helper_mode(mode)
-        except KeyError as exc:
-            return str(exc)
-        return True
+        return validation_message(("mode", resolve_helper_mode, mode))
 
     @classmethod
     def IS_CHANGED(cls, *args, **kwargs):  # noqa: N802 — ComfyUI API contract
