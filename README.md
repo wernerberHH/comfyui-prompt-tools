@@ -168,6 +168,14 @@ for the cascade and how to author your own override.
 
 ## Updating
 
+**Before you update, read the upgrade notice at the top of
+[`CHANGELOG.md`](CHANGELOG.md).** It covers the two things an update cannot
+do for you. Any `system_prompts/<name>.txt` you created stays in place and
+keeps hiding the shipped template, so those modes keep their old wording and
+ignore the `target_model` setting. And the dropdown labels were renamed: old
+workflows still load, but a workflow saved with this version no longer opens
+in 1.1.x. The notice says how to spot both and what to do about it.
+
 ```bash
 cd /path/to/ComfyUI/custom_nodes/comfyui-prompt-tools
 git pull
@@ -183,7 +191,9 @@ reach a template you have a copy of. Neither `git pull` nor the
 ComfyUI-Manager removes your `.txt` files, by design.
 
 So after an update, the nodes check their own template directory once at
-startup and summarise what they find in the ComfyUI log:
+startup and summarise what they find in the ComfyUI log. To read it without
+leaving the browser, run the command *Toggle Logs Bottom Panel* from the
+ComfyUI command palette:
 
 ```
 Local system-prompt copies take precedence over the shipped templates,
