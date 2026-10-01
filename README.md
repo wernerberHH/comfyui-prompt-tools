@@ -284,6 +284,7 @@ output an edit-instruction prompt:
 | Background Change | Replace background |
 | Pose Change | Change pose while preserving identity |
 | Combined Edit | Multi-aspect edit in one prompt |
+| Outpaint (Zoom Out) | Extend a crop of a person into a full-body shot, completing build, outfit and footwear |
 
 **Describe modes** — input one reference image, output a short snippet
 about that aspect (ready to feed into PromptComposer):

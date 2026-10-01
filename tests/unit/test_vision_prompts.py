@@ -229,3 +229,99 @@ class TestDescribePicturePrompt:
         prompt = get_vision_system_prompt("Describe Picture")
         assert "4–6 sentences" in prompt
         assert "downstream" in prompt.lower()
+
+
+class TestOutpaintZoomOutPrompt:
+    """v1.2: 'Outpaint (Zoom Out)' extends a crop into a full-body shot.
+
+    The mode exists because the image model invents everything outside the
+    original crop and follows the prompt literally — an unspecified lower
+    garment comes back as bare legs. The template therefore has to force a
+    COMPLETE outfit and a plausible build, not a description of what is
+    visible. These tests pin that contract.
+    """
+
+    #: What `{img1}` has to become per image-capable target model.
+    EXPECTED_IMAGE_REF = {
+        "Generic": "image 1",
+        "FLUX.2": "image 1",
+        "FLUX Kontext": "image 1",
+        "Krea 2": "Picture 1",
+        "Qwen-Image-Edit 2511": "Picture 1",
+        "Qwen-Image 2.1": "<image1>",
+    }
+
+    def test_mode_is_registered(self):
+        """The label appears in the derived list and maps to its basename.
+        Mocks: none.
+        """
+        assert "Outpaint (Zoom Out)" in VISION_MODE_TO_FILE
+        assert VISION_MODE_TO_FILE["Outpaint (Zoom Out)"] == (
+            "vision_outpaint_zoom_out"
+        )
+        assert "Outpaint (Zoom Out)" in AVAILABLE_VISION_MODES
+
+    def test_prompt_loads_non_empty_with_shared_rules_substituted(self):
+        """The template renders and the ``{shared_rules}`` placeholder is gone.
+        Mocks: none.
+        """
+        prompt = get_vision_system_prompt("Outpaint (Zoom Out)")
+        assert len(prompt.strip()) > 100
+        assert "{shared_rules}" not in prompt
+        assert "Output ONLY the enhanced prompt" in prompt
+
+    def test_template_fingerprints(self):
+        """Stable strings from the template body — a truncated file surfaces.
+
+        Each one carries a decision from the briefing: the crop-to-full-body
+        job, the complete outfit down to the footwear, the ban on numeric
+        measurements, and the scene continuing outward.
+        Mocks: none.
+        """
+        prompt = get_vision_system_prompt("Outpaint (Zoom Out)")
+        for fingerprint in (
+            "FULL-BODY photograph",
+            "70–130 words",
+            "DESCRIBE THE WHOLE PERSON",
+            "OUTFIT, COMPLETE",
+            "never numbers",
+            "head to feet",
+        ):
+            assert fingerprint in prompt, f"missing fingerprint {fingerprint!r}"
+
+    def test_instruction_to_the_llm_names_the_input_positionally(self):
+        """Which input is which is fixed prose, independent of the target model.
+        Mocks: none.
+        """
+        prompt = get_vision_system_prompt("Outpaint (Zoom Out)")
+        assert "The first image shows only a CROP of a person" in prompt
+
+    @pytest.mark.parametrize("label", sorted(EXPECTED_IMAGE_REF))
+    def test_image_reference_renders_per_target_model(self, label):
+        """``{img1}`` becomes the wording the selected image model expects.
+        Mocks: none.
+        """
+        rendered = get_vision_system_prompt(
+            "Outpaint (Zoom Out)", target_model=label
+        )
+        assert self.EXPECTED_IMAGE_REF[label] in rendered
+
+    @pytest.mark.parametrize("label", sorted(EXPECTED_IMAGE_REF))
+    def test_no_unrendered_placeholder_survives(self, label):
+        """Not a single ``{img`` may reach the LLM — it would be echoed verbatim.
+        Mocks: none.
+        """
+        rendered = get_vision_system_prompt(
+            "Outpaint (Zoom Out)", target_model=label
+        )
+        assert "{img" not in rendered
+
+    def test_every_image_capable_target_model_is_covered(self):
+        """Guard: a new target model must be added to the table above.
+        Mocks: none.
+        """
+        from comfyui_prompt_tools import catalog as catalog_mod
+
+        assert set(catalog_mod.image_target_model_labels()) == set(
+            self.EXPECTED_IMAGE_REF
+        )

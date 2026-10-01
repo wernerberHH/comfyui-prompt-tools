@@ -328,6 +328,12 @@ vision_modes:
     kind: edit
     images: 1
 
+  - id: outpaint_zoom_out
+    label: "Outpaint (Zoom Out)"
+    template: vision_outpaint_zoom_out
+    kind: edit
+    images: 1
+
   # ---- Describe modes -----------------------------------------------------
   - id: vision_describe_picture
     label: "Describe Picture"
