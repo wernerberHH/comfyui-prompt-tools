@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from ..catalog import helper_mode_labels, resolve_helper_mode
 from ..engines import OllamaError, OpenAIError
 from ..post_processing import strip_llm_noise
-from ..prompts import AVAILABLE_MODES, get_system_prompt
+from ..prompts import get_system_prompt
 from ..random_pools import (
     DEFAULT_AGE_POOL,
     DEFAULT_ETHNICITY_POOL,
@@ -14,6 +15,38 @@ from ..random_pools import (
     pick_from_pool,
 )
 from .base_prompt_node import BasePromptNode
+from .catalog_validation import validation_message
+
+#: Catalog id of the catch-all mode that takes its system prompt from the
+#: node's own text field instead of a template.
+_CUSTOM_SYSTEM_PROMPT_ID = "custom_system_prompt"
+
+
+def _mode_entry(mode):
+    """Resolve a mode label or alias, or ``None`` if it is not in the catalog.
+
+    Unknown values are reported as ``None`` rather than raised so the
+    dispatch below can fall through to the regular path, where
+    ``get_system_prompt`` produces the error message.
+    """
+    if not isinstance(mode, str):
+        return None
+    try:
+        return resolve_helper_mode(mode)
+    except KeyError:
+        return None
+
+
+def _uses_random_pools(mode) -> bool:
+    """True if the mode feeds the random slot pools into the user message."""
+    entry = _mode_entry(mode)
+    return entry is not None and entry.uses_random_pools
+
+
+def _is_custom_system_prompt(mode) -> bool:
+    """True for the catch-all mode driven by the node's own text field."""
+    entry = _mode_entry(mode)
+    return entry is not None and entry.id == _CUSTOM_SYSTEM_PROMPT_ID
 
 
 class PromptHelper(BasePromptNode):
@@ -22,10 +55,11 @@ class PromptHelper(BasePromptNode):
     @classmethod
     def INPUT_TYPES(cls):  # noqa: N802 — ComfyUI API contract
         engine_inputs = cls._build_engine_inputs()
+        modes = helper_mode_labels()
         return {
             "required": {
                 "prompt":      ("STRING", {"multiline": True, "default": ""}),
-                "mode":        (AVAILABLE_MODES, {"default": "FLUX Kontext (Scene Edit)"}),
+                "mode":        (modes, {"default": modes[0]}),
                 **engine_inputs,
                 "keep_alive":  ("STRING", {"default": "30s"}),
             },
@@ -50,12 +84,25 @@ class PromptHelper(BasePromptNode):
     OUTPUT_NODE = False
 
     @classmethod
+    def VALIDATE_INPUTS(cls, mode):  # noqa: N802 — ComfyUI API contract
+        """Accept current labels and the former labels kept as aliases.
+
+        Naming ``mode`` here makes ComfyUI skip its own "Value not in list"
+        check for that input (see the guard in ``execution.py``), which is
+        what lets a workflow saved with an old label still queue. Unknown
+        values are rejected here instead, with the known ones listed.
+        """
+        return validation_message(("mode", resolve_helper_mode, mode))
+
+    @classmethod
     def IS_CHANGED(cls, *args, **kwargs):  # noqa: N802 — ComfyUI API contract
-        # In Random modes, force re-execution every queue (bypass cache)
+        # Random-pool modes force re-execution every queue (bypass cache).
+        # The flag lives in the catalog, so a renamed label keeps working
+        # and a user-defined random mode gets the same treatment.
         mode = kwargs.get("mode", "")
         if not mode and len(args) >= 2:
             mode = args[1]
-        if isinstance(mode, str) and mode.startswith("Random"):
+        if _uses_random_pools(mode):
             return float("NaN")
         return ""
 
@@ -147,7 +194,7 @@ class PromptHelper(BasePromptNode):
         outfit_style_pool: str = "",
     ):
         # ---- 1. Decide system prompt and user message ------------------
-        if mode.startswith("Random Character"):
+        if _uses_random_pools(mode):
             user_message, chosen = self._build_random_character_message(
                 prompt, ethnicity_pool, age_pool, mood_pool, hair_pool,
                 lighting_pool, setting_pool, outfit_style_pool,
@@ -158,7 +205,7 @@ class PromptHelper(BasePromptNode):
             constraints_preview = (prompt.strip() or "(none)")[:120]
             print(f"[PromptHelper] Constraints: {constraints_preview}")
 
-        elif mode == "Custom System Prompt" and custom_system_prompt.strip():
+        elif _is_custom_system_prompt(mode) and custom_system_prompt.strip():
             if not prompt.strip():
                 return ("", "")
             system_prompt = custom_system_prompt.strip()

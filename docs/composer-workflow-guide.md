@@ -25,7 +25,7 @@ rationale behind the pipeline approach.
                                                           "two people sharing
                                                            dessert, warm tones"
                                                           output_style:
-                                                          "FLUX.2 natural language"
+                                                       "FLUX.2 – Natural Language"
                                                                        │
                                                                        ▼
                                                             composed_prompt
@@ -119,7 +119,7 @@ Drop a `PromptComposer` node:
 - `engine`: `vllm` (text-only, faster than the vision engine you used in step 1)
 - `base_url` + `model`: a text LLM, e.g. `Qwen2.5-7B-Instruct`
 - `user_instruction`: `"two people sharing dessert at a candlelit bistro, warm tones"`
-- `output_style`: `FLUX.2 natural language`
+- `output_style`: `FLUX.2 – Natural Language`
 - `input_1`: ← from the `VisionPromptHelper` (background snippet)
 - `input_2`: ← from the outfit A text primitive
 - `input_3`: ← from the outfit B text primitive
@@ -182,9 +182,9 @@ This is the recommended replacement for the older
   instruction across a batch, the upstream snippets stay constant and only
   the composer re-runs.
 - **Pick the right output style**:
-  - `FLUX.2 natural language` for FLUX.2 dev / Kontext, Qwen Image Edit
-  - `SDXL tag-based` for SDXL / Pony / Illustrious
-  - `Z-Image compact` for Z-Image (denser is better there)
+  - `FLUX.2 – Natural Language` for FLUX.2 dev / Kontext, Qwen-Image-Edit
+  - `SDXL – Tags` for SDXL / Pony / Illustrious
+  - `Z-Image – Compact` for Z-Image (denser is better there)
 - **Drop irrelevant snippets** instead of forcing them in. The composer is
   instructed to drop inputs that conflict with or are irrelevant to the
   user instruction — but if you know one is irrelevant, just leave the
@@ -197,7 +197,7 @@ This is the recommended replacement for the older
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Composed prompt ignores one snippet | Snippet conflicts with `user_instruction` (composer prefers the instruction by design) | Reword the snippet, or drop the conflicting bit |
-| Output is too long for SDXL | Wrong `output_style` | Switch to `SDXL tag-based` |
+| Output is too long for SDXL | Wrong `output_style` | Switch to `SDXL – Tags` |
 | `ERROR: nothing to compose` | Both `user_instruction` and all 5 inputs are empty / unwired | Wire at least one input or type an instruction |
 | `ERROR: connection refused` | Engine URL unreachable | Check `engine`, `base_url`, and that the LLM server is up |
 | Dropdown for `model` is empty | No `models:` list configured for that URL in `endpoints.yaml` | Add the model name to the list, or type it into the field if it's a text input |

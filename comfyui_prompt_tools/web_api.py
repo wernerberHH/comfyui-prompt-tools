@@ -14,6 +14,9 @@ Routes registered on the ComfyUI PromptServer:
   POST /comfyui-prompt-tools/discover
        -> run model discovery for one provider or all, merge results
        into config/endpoints.yaml (with .backup of the previous file)
+  GET  /comfyui-prompt-tools/catalog-aliases
+       -> {node class: {widget: {former label: current label}}} so the
+       frontend can migrate a loaded workflow's stale combo values
 
 Routes are registered defensively: if PromptServer is not importable
 (e.g. during pytest of the package without ComfyUI installed), the
@@ -31,6 +34,7 @@ from typing import Any, Optional
 # Module-level imports of the engine internals — needed so tests can
 # monkey-patch them via web_api.X and so import-time errors surface
 # immediately instead of being deferred into request handling.
+from .catalog import CatalogError, load_catalog
 from .engines import PROVIDERS
 from .engines.api_key_resolver import resolve_api_key, resolve_url_override
 from .engines.model_discovery import DiscoveryError, discover_models
@@ -271,6 +275,51 @@ def run_discovery(provider: Optional[str] = None) -> dict[str, Any]:
     }
 
 
+def get_catalog_widget_aliases() -> dict[str, dict[str, dict[str, str]]]:
+    """Return the former->current label map per node class and widget.
+
+    Shape::
+
+        {"PromptHelper": {"mode": {"Random Character (Pony)":
+                                   "SDXL Pony - Random Character"}}, ...}
+
+    The frontend uses it to rewrite a loaded workflow's stale combo values.
+    Saved workflows store a label as a plain string; the server still
+    accepts the old one (see each node's ``VALIDATE_INPUTS``), but the
+    widget would show a value that is no longer in its list. Rewriting it
+    on load clears that and makes the next save carry the current label.
+
+    Degrades to ``{}`` on any catalog problem — a broken catalog must not
+    also break the settings UI, and the nodes report it loudly themselves.
+    """
+    try:
+        catalog = load_catalog()
+    except CatalogError as exc:
+        logger.warning("Catalog unavailable; alias migration disabled: %s", exc)
+        return {}
+
+    def pairs(entries) -> dict[str, str]:
+        return {
+            alias: entry.label for entry in entries for alias in entry.aliases
+        }
+
+    out = {
+        "PromptHelper": {"mode": pairs(catalog.prompt_helper_modes)},
+        "PromptComposer": {"output_style": pairs(catalog.composer_styles)},
+        "VisionPromptHelper": {
+            "mode": pairs(catalog.vision_modes),
+            "target_model": pairs(catalog.image_target_models),
+        },
+    }
+    # Drop widgets with nothing to migrate so the payload stays small and
+    # the frontend can skip them without checking.
+    return {
+        node: {w: m for w, m in widgets.items() if m}
+        for node, widgets in out.items()
+        if any(widgets.values())
+    }
+
+
 # ----- aiohttp route registration (skipped if ComfyUI absent) -------------
 
 
@@ -310,6 +359,10 @@ def register_routes() -> bool:
                 {"ok": False, "error": "missing 'provider'"}, status=400
             )
         return web.json_response(test_provider_connection(provider))
+
+    @routes.get("/comfyui-prompt-tools/catalog-aliases")
+    async def _catalog_aliases(_request):
+        return web.json_response(get_catalog_widget_aliases())
 
     @routes.post("/comfyui-prompt-tools/discover")
     async def _discover(request):

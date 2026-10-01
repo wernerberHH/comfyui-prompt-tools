@@ -1,47 +1,74 @@
-# Adding a Mode to PromptHelper
+# Adding a Mode, a Style or a Target Model
 
-Every PromptHelper "mode" (visible in the node's mode dropdown) is
-backed by exactly two things: one row in `prompts.py:MODE_TO_FILE`
-and one template file in `system_prompts/`. Adding a mode means
-adding both. No code changes are needed inside the node itself —
-the loader picks it up automatically.
+Every selectable value in the three LLM nodes comes from one file:
+`config/catalog.yaml.example`. Adding a PromptHelper mode, a
+PromptComposer output style, a VisionPromptHelper mode or a target
+model means **one entry in that file** plus, for the entries that have
+a `template`, **one template file** under
+`comfyui_prompt_tools/system_prompts/`. There is no code to touch — the
+loader builds the dropdowns from the catalog when ComfyUI starts.
 
-The walkthrough below shows the FLUX Text-to-Image / Z-Image
-Text-to-Image pattern. The same recipe applies to all PromptHelper
-modes (Random-Character modes additionally use the slot-pool
-machinery in `random_pools.py`, but the loader contract is identical).
+See [`architecture/prompt-catalog.md`](architecture/prompt-catalog.md)
+for how the pieces fit together.
 
-## Step 1 — pick a name and a basename
+## Where to put your entry
 
-The **mode label** is what shows in the UI (e.g.
-`"Z-Image Text-to-Image"`). Keep it concise and grouped with similar
-modes — text-to-image modes live next to each other, edit modes
-next to each other.
+| You want to… | Section in the catalog |
+|---|---|
+| add a PromptHelper mode | `prompt_helper_modes` |
+| add a PromptComposer output style | `composer_styles` |
+| add a VisionPromptHelper mode | `vision_modes` |
+| add an image / video model the prompts are written for | `target_models` |
 
-The **basename** is the filename-safe version used on disk
-(e.g. `zimage_text_to_image`). Lower-case, underscores, no
-parentheses or slashes. The override cascade builds on this
-basename (see `docs/system-prompt-overrides.md`).
+`config/catalog.yaml.example` is the shipped truth and is overwritten by
+`git pull`. Put **your** entries in a sibling `config/catalog.yaml`
+(gitignored) — it is overlaid on the shipped file, matched by `id`:
 
-## Step 2 — write the default template
+* same `id` → the fields you list replace the shipped ones
+* new `id` → appended at the end of its section
+* `enabled: false` → the entry disappears from the dropdown
+
+You only repeat the fields you want to change. Contributing a mode
+upstream means adding it to `config/catalog.yaml.example` instead.
+
+## Step 1 — pick an id, a label and a basename
+
+The **`id`** is the stable internal key. Lower-case, underscores. Never
+rename it once it has shipped: local overlays and the `target_model`
+references point at it.
+
+The **`label`** is what shows in the UI (e.g.
+`"Z-Image – Text-to-Image"`). Two conventions worth keeping:
+
+- Target model first, task second, separated by an en dash — the
+  dropdown then groups by model when read top to bottom.
+- A label is **frozen once released.** Saved ComfyUI workflows store it
+  as a plain string, so renaming one breaks every workflow that used it.
+  If you must rename, move the old label into `aliases` (see step 4).
+
+The **basename** is the filename-safe name of the template on disk
+(e.g. `zimage_text_to_image`). The per-model override cascade builds on
+it (see [`system-prompt-overrides.md`](system-prompt-overrides.md)).
+
+## Step 2 — write the template
 
 Create `comfyui_prompt_tools/system_prompts/<basename>.txt.example`.
 
 The committed templates ship as `.txt.example` so a `git pull` never
-overwrites user-edited `<basename>.txt` copies (the loader prefers
-the `.txt` if present and falls back to the `.example`). When
-contributing a new mode upstream, commit the `.txt.example`; users
-can then copy it to `<basename>.txt` to customise locally.
+overwrites user-edited `<basename>.txt` copies (the loader prefers the
+`.txt` if present and falls back to the `.example`). When contributing a
+new mode upstream, commit the `.txt.example`; users can then copy it to
+`<basename>.txt` to customise locally.
 
-The template is a system prompt the LLM receives ahead of the
-user's input. It should:
+The template is a system prompt the LLM receives ahead of the user's
+input. It should:
 
 - Open with one line of role framing
   ("You are a prompt engineer for X…").
 - Spell out the output style the downstream model expects —
   tag list, natural language, dense vs verbose, etc.
-- List concrete inclusions (technical markers, anatomy safety,
-  token anchors like `image 1` / `image 2` if the model needs them).
+- List concrete inclusions (technical markers, anatomy safety, quality
+  anchors the model needs).
 - End with `{shared_rules}` on its own line. The loader substitutes
   that placeholder with the contents of `_shared_rules.txt`.
 
@@ -49,59 +76,174 @@ Length budget: 100–300 words for the template body. Existing files
 (`flux_text_to_image.txt.example`, `zimage_text_to_image.txt.example`,
 `random_character_pony.txt.example`) are good references.
 
-## Step 3 — register the mode
+### Referring to reference images
 
-In `comfyui_prompt_tools/prompts.py`, add the entry to `MODE_TO_FILE`
-in the location that groups it with similar modes:
+Never write `image 1` or `Picture 1` into a template. Target models
+address their inputs differently and the catalog is what decides the
+wording. Two different jobs, two different notations:
 
-```python
-MODE_TO_FILE: Dict[str, str] = {
-    ...
-    "FLUX Text-to-Image":             "flux_text_to_image",
-    "Z-Image Text-to-Image":          "zimage_text_to_image",
-    "SDXL Photorealistic":            "sdxl_photorealistic",
-    ...
-}
+| What you are writing | Notation |
+|---|---|
+| an instruction **to the vision LLM** about which input is which | fixed prose: "the first image", "the second image" |
+| text the LLM must **put into the prompt it produces** | `{img1}`, `{img2}`, `{img3}` |
+
+`{imgN}` is replaced with the `image_ref` pattern of the selected target
+model — `image 1` for FLUX Kontext, `Picture 1` for Qwen-Image-Edit 2511
+and Krea 2, `<image1>` for Qwen-Image 2.1. `Generic` keeps the neutral
+`image {n}`.
+
+Describe-mode templates get **no image reference at all**: their output
+is a snippet that a composer pastes into someone else's prompt, where an
+`image 1` would address the wrong picture.
+
+## Step 3 — register the entry
+
+Add one entry to the right section. The order in the file is the
+dropdown order, so place it next to similar entries.
+
+A PromptHelper mode:
+
+```yaml
+prompt_helper_modes:
+  - id: zimage_text_to_image
+    label: "Z-Image – Text-to-Image"
+    aliases: ["Z-Image Text-to-Image"]
+    template: zimage_text_to_image
+    target_model: zimage
 ```
 
-`AVAILABLE_MODES` is derived from `MODE_TO_FILE.keys()` — no
-separate update needed. The PromptHelper node's dropdown will
+A composer style takes the same fields. A vision mode replaces
+`target_model` (the user picks that on the node) with `kind` and
+`images`:
+
+```yaml
+vision_modes:
+  - id: vision_describe_hair
+    label: "Describe Hair"
+    template: vision_describe_hair
+    kind: describe        # edit | describe
+    images: 1             # 1 | 2 — 2 requires image_2 to be wired up
+```
+
+A target model needs `image_ref` only if it addresses reference images
+inside the prompt. Models without it are text-to-image / text-to-video
+and are not offered in the VisionPromptHelper `target_model` dropdown:
+
+```yaml
+target_models:
+  - id: qwen_image_21
+    label: "Qwen-Image 2.1"
+    image_ref: "<image{n}>"     # {n} is the image number
+```
+
+`AVAILABLE_MODES`, `OUTPUT_STYLES` and `AVAILABLE_VISION_MODES` are
+derived from the catalog — no separate update needed. The dropdowns
 include the new label the next time ComfyUI reloads.
 
-## Step 4 — (optional) ship model-family overrides
+The catalog is validated on load and **fails loudly**: a duplicate `id`,
+a label that collides with another entry's alias, a missing template
+file, a dangling `target_model` or an `image_ref` without `{n}` raises a
+`CatalogError` naming the offending entry and field.
 
-If the mode benefits from a different tone for a specific model
-family (e.g. a narrative variant for a chat-tuned model, a tag-only
-variant for another), add
+## Step 4 — renaming a released label
+
+Move the old label into `aliases` and give the entry the new `label`:
+
+```yaml
+  - id: random_character_pony
+    label: "SDXL Pony – Random Character"
+    aliases: ["Random Character (Pony)"]
+```
+
+Both strings then resolve to the same entry, so a workflow saved with
+the old label keeps running. This works because the three nodes declare
+a `VALIDATE_INPUTS` classmethod naming `mode` / `output_style` /
+`target_model`, which makes ComfyUI skip its own "Value not in list"
+check for those inputs and delegate to the catalog. **Never remove an
+alias once it has shipped.**
+
+The widget in a *loaded* workflow is handled too: the frontend
+extension in `web/` fetches
+`GET /comfyui-prompt-tools/catalog-aliases` and rewrites a stale value to
+its current label as each node is restored, so the widget never shows a
+value that is missing from its list and the next save carries the current
+name. Add the alias and both halves follow automatically.
+
+## Adding a node input — always at the end
+
+This is a separate rule from everything above, and it is the one that
+bites hardest. **A new input goes last in `INPUT_TYPES`, never between
+existing ones.**
+
+A saved ComfyUI workflow does not store widget names. Each node is
+persisted as a flat `widgets_values` array, and on load the values are
+handed to the node's widgets *in order*. Insert an input in the middle
+and every value after it lands on the wrong widget, in every workflow
+anyone ever saved.
+
+It happened in this package. `target_model` was first declared before
+`custom_system_prompt` on VisionPromptHelper. Existing nodes store nine
+values ending in the custom prompt, so on load that prompt was handed to
+`target_model`: the node either failed validation with
+`Unknown target model: ''` or sent the user's entire system prompt as a
+target-model name — and `custom_system_prompt` came up empty.
+
+Rules that follow from it:
+
+- Append. Order inside `required` and `optional` is the widget order
+  (`required` first), so appending to `optional` is the safe spot.
+- Give the new input a sane default and treat "unset" as that default.
+  `None` *and* the empty string both mean "not set" — a positional shift
+  or a hand-edited workflow can deliver either.
+- `forceInput: True` inputs and link-only types (`IMAGE`, `LATENT`, …)
+  are sockets, not widgets, and never occupy a `widgets_values` slot. A
+  widget the *user* converted to an input does keep its slot.
+- Removing or reordering an input has the same effect as inserting one.
+  If it is unavoidable, it is a breaking change for saved workflows and
+  belongs in the CHANGELOG as one.
+
+`tests/unit/test_widget_positions.py` guards this: it reconstructs the
+frontend's positional mapping from `INPUT_TYPES` and asserts that the
+pre-v1.2.0 widget order is still an exact prefix of the current one for
+all three nodes. An API-level test cannot catch it — an API prompt is a
+dict keyed by input name.
+
+## Step 5 — (optional) ship model-family overrides
+
+If the mode benefits from a different tone for a specific LLM family
+(e.g. a narrative variant for a chat-tuned model, a tag-only variant
+for another), add
 `system_prompts/<basename>.<family>.txt.example` (or `.txt` for a
 purely local override that should not be committed). The cascade in
 `prompts.py:render_template` picks it up automatically when the
-user selects a matching model. See `docs/system-prompt-overrides.md`
-for the family list and style guide.
+user selects a matching model. See
+[`system-prompt-overrides.md`](system-prompt-overrides.md) for the
+family list and style guide.
 
-## Step 5 — add a unit test
+## Step 6 — add a unit test
 
-In `tests/unit/test_prompts_loader.py`, add a short test that:
+In `tests/unit/test_prompts_loader.py` (or
+`test_vision_prompts.py` / `test_prompt_composer.py`), add a short test
+that:
 
-- asserts the mode label appears in `AVAILABLE_MODES`,
-- maps to the expected basename in `MODE_TO_FILE`,
-- loads a non-empty rendered prompt via `get_system_prompt(label)`,
+- asserts the label appears in the derived list,
+- maps to the expected basename,
+- loads a non-empty rendered prompt,
 - has `{shared_rules}` substituted (placeholder absent from output),
 - contains one or two stable fingerprint strings from the template
   body (so a future accidental file truncation surfaces).
 
-The parametrised cascade test
-(`test_override_tag_falls_back_to_default_in_shipped_library`) runs
-across every mode in `AVAILABLE_MODES`, so a new mode is covered the
-moment it lands in `MODE_TO_FILE` — no separate registration needed.
+Do **not** assert a mode count — adding a mode should not require
+editing an unrelated test.
+
+The parametrised tests already cover every entry the moment it lands in
+the catalog: the cascade fallback test in `test_prompts_loader.py`, the
+template-exists and label-uniqueness checks in `test_catalog.py`, and —
+for vision modes — the "describe modes carry no image reference" /
+"edit modes do reference an image" pair in `test_catalog.py`.
 
 Run the suite from the repo root:
 
 ```bash
-python -m pytest tests/unit/ -v
+python3 -m pytest tests/unit -q
 ```
-
-No nodes need editing — `PromptHelper`, `VisionPromptHelper`, and
-`PromptComposer` read `AVAILABLE_MODES` and call the loader by
-label, so the new mode is wired up the moment the registry and
-template land.

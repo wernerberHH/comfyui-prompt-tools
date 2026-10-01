@@ -69,12 +69,16 @@ class TestOutfitTransferPrompt:
         assert "FLUX.2" in prompt
 
     def test_prompt_describes_two_images(self):
-        """Rendered prompt references both IMAGE 1 and IMAGE 2 roles.
+        """Rendered prompt names both input images by position.
+
+        The wording that tells the vision LLM which input is which is fixed
+        text ("the first image" / "the second image") and does not depend on
+        the target model.
         Mocks: none.
         """
         prompt = get_vision_system_prompt("Outfit Transfer")
-        assert "IMAGE 1" in prompt
-        assert "IMAGE 2" in prompt
+        assert "The first image shows the IDENTITY SOURCE" in prompt
+        assert "The second image shows the OUTFIT SOURCE" in prompt
 
     def test_outfit_transfer_contains_image_role_tokens(self):
         """The outfit-transfer template must reference 'image 1' and 'image 2'

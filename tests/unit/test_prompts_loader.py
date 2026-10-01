@@ -11,6 +11,7 @@ isolation without shipping override files in the repo.
 
 import pytest
 
+from comfyui_prompt_tools.catalog import load_catalog
 from comfyui_prompt_tools.prompts import (
     AVAILABLE_MODES,
     MODE_TO_FILE,
@@ -27,10 +28,16 @@ from comfyui_prompt_tools.prompts import (
 
 
 @pytest.mark.unit
-def test_available_modes_count():
-    """Should have exactly 13 modes (9 v0.4 + Z-Image v0.5 + LTX-2.3 Audio-Video
-    + Krea 2 Text-to-Image + LTX-2.5 Multi-Shot Audio-Video)."""
-    assert len(AVAILABLE_MODES) == 13
+def test_available_modes_mirror_the_catalog():
+    """``AVAILABLE_MODES`` is exactly the catalog's PromptHelper mode list.
+
+    The count is deliberately not asserted — modes live in
+    ``config/catalog.yaml.example`` and adding one must not require a test
+    edit.
+    """
+    expected = [e.label for e in load_catalog().prompt_helper_modes]
+    assert AVAILABLE_MODES == expected
+    assert AVAILABLE_MODES  # a node with an empty dropdown is unusable
 
 
 @pytest.mark.unit
@@ -78,9 +85,9 @@ def test_unknown_mode_raises():
 def test_zimage_text_to_image_mode_registered():
     """Z-Image Text-to-Image must be a registered mode and load a Z-Image-
     flavoured default template (added in v0.5)."""
-    assert "Z-Image Text-to-Image" in AVAILABLE_MODES
-    assert MODE_TO_FILE["Z-Image Text-to-Image"] == "zimage_text_to_image"
-    prompt = get_system_prompt("Z-Image Text-to-Image")
+    assert "Z-Image – Text-to-Image" in AVAILABLE_MODES
+    assert MODE_TO_FILE["Z-Image – Text-to-Image"] == "zimage_text_to_image"
+    prompt = get_system_prompt("Z-Image – Text-to-Image")
     assert "Z-Image" in prompt
     # Z-Image style guarantees: dense natural language, no tag syntax,
     # no negation guidance, length budget mentioned.
@@ -100,9 +107,9 @@ def test_krea2_text_to_image_mode_registered():
 
     Mocks: none — pure file load.
     """
-    assert "Krea 2 Text-to-Image" in AVAILABLE_MODES
-    assert MODE_TO_FILE["Krea 2 Text-to-Image"] == "krea2_text_to_image"
-    prompt = get_system_prompt("Krea 2 Text-to-Image")
+    assert "Krea 2 – Text-to-Image" in AVAILABLE_MODES
+    assert MODE_TO_FILE["Krea 2 – Text-to-Image"] == "krea2_text_to_image"
+    prompt = get_system_prompt("Krea 2 – Text-to-Image")
     assert "Krea 2" in prompt
     # Krea 2 style guarantees: prose over tags, no quality boosters,
     # no negation, explicit length budget.
@@ -122,9 +129,9 @@ def test_ltx25_video_mode_registered():
 
     Mocks: none — pure file load.
     """
-    assert "LTX-2.5 Video (Multi-Shot Audio-Video)" in AVAILABLE_MODES
-    assert MODE_TO_FILE["LTX-2.5 Video (Multi-Shot Audio-Video)"] == "ltx25_video"
-    prompt = get_system_prompt("LTX-2.5 Video (Multi-Shot Audio-Video)")
+    assert "LTX-2.5 – Multi-Shot Video with Audio" in AVAILABLE_MODES
+    assert MODE_TO_FILE["LTX-2.5 – Multi-Shot Video with Audio"] == "ltx25_video"
+    prompt = get_system_prompt("LTX-2.5 – Multi-Shot Video with Audio")
     assert "LTX-2.5" in prompt
     for anchor in ("cut", "camera", "audio", "shot"):
         assert anchor in prompt.lower(), f"LTX-2.5 prompt lost the {anchor!r} rule"
@@ -133,19 +140,21 @@ def test_ltx25_video_mode_registered():
 
 
 @pytest.mark.unit
-def test_ltx23_mode_label_unchanged_by_ltx25():
-    """Adding LTX-2.5 must not disturb the LTX-2.3 label or its file.
+def test_ltx23_mode_resolves_under_both_labels():
+    """The LTX-2.3 mode answers to its new label and its former one.
 
     Mode labels are persisted as plain strings inside saved ComfyUI
-    workflows, so renaming one silently breaks every workflow using it.
+    workflows, so the pre-catalog label has to keep resolving via the
+    catalog's ``aliases``.
 
     Mocks: none.
     """
-    assert "LTX-2.3 Video (Audio-Video)" in AVAILABLE_MODES
-    assert MODE_TO_FILE["LTX-2.3 Video (Audio-Video)"] == "ltx2_video"
-    assert get_system_prompt("LTX-2.3 Video (Audio-Video)").startswith(
-        "You are a prompt engineer for LTX-2.3"
-    )
+    assert "LTX-2.3 – Video with Audio" in AVAILABLE_MODES
+    assert MODE_TO_FILE["LTX-2.3 – Video with Audio"] == "ltx2_video"
+    for label in ("LTX-2.3 – Video with Audio", "LTX-2.3 Video (Audio-Video)"):
+        assert get_system_prompt(label).startswith(
+            "You are a prompt engineer for LTX-2.3"
+        )
 
 
 # ---------------------------------------------------------------------------

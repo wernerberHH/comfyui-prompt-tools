@@ -15,6 +15,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from comfyui_prompt_tools.nodes.prompt_helper import PromptHelper
+from comfyui_prompt_tools.catalog import load_catalog
 from comfyui_prompt_tools.prompts import AVAILABLE_MODES
 
 
@@ -80,26 +81,26 @@ class TestPromptHelperEngineSelection:
         assert "japanese" in body
         assert "serious" in body
 
-    def test_prompt_helper_keeps_all_modes_listed(self):
-        """The mode dropdown exposes exactly the 13 documented modes."""
-        modes = AVAILABLE_MODES
-        assert len(modes) == 13
-        expected = {
-            "FLUX Kontext (Scene Edit)",
-            "FLUX Kontext (Couple Scene)",
-            "Qwen Image Edit (Couple Scene)",
-            "FLUX Text-to-Image",
-            "Z-Image Text-to-Image",
-            "SDXL Photorealistic",
-            "SDXL Pony/Illustrious",
-            "Random Character (Z-Image)",
-            "Random Character (Pony)",
-            "LTX-2.3 Video (Audio-Video)",
-            "Krea 2 Text-to-Image",
-            "LTX-2.5 Video (Multi-Shot Audio-Video)",
-            "Custom System Prompt",
-        }
-        assert set(modes) == expected
+    def test_prompt_helper_dropdown_comes_from_the_catalog(self):
+        """The mode dropdown is the catalog's list, in catalog order.
+
+        No count is asserted: modes live in
+        ``config/catalog.yaml.example`` and adding one must not require a
+        test edit.
+        """
+        expected = [e.label for e in load_catalog().prompt_helper_modes]
+        assert PromptHelper.INPUT_TYPES()["required"]["mode"][0] == expected
+        assert AVAILABLE_MODES == expected
+
+    def test_prompt_helper_accepts_pre_catalog_mode_labels(self):
+        """Every former label still validates, so saved workflows keep running.
+
+        ``VALIDATE_INPUTS`` is what makes this work — ComfyUI skips its own
+        combo-list check for ``mode`` because the classmethod names it.
+        """
+        for entry in load_catalog().prompt_helper_modes:
+            for alias in entry.aliases:
+                assert PromptHelper.VALIDATE_INPUTS(alias) is True
 
     def test_input_types_includes_engine_dropdown(self):
         """The migrated INPUT_TYPES exposes the engine selector field."""

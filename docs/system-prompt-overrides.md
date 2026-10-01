@@ -63,18 +63,22 @@ follow the pattern `<existing_default_basename>.<family>.txt`
 
 | Mode label | Default file | Example override filename |
 |---|---|---|
-| FLUX Kontext (Couple Scene) | `flux_kontext_couple_scene.txt.example` | `flux_kontext_couple_scene.qwen3vl.txt` |
-| Qwen Image Edit (Couple Scene) | `qwen_image_edit_couple_scene.txt.example` | `qwen_image_edit_couple_scene.qwen3vl.txt` |
-| Random Character (Pony) | `random_character_pony.txt.example` | `random_character_pony.qwen3vl.txt` |
-| Random Character (Z-Image) | `random_character_zimage.txt.example` | `random_character_zimage.qwen3vl.txt` |
-| Z-Image Text-to-Image | `zimage_text_to_image.txt.example` | `zimage_text_to_image.qwen3vl.txt` |
+| FLUX Kontext – Couple Scene | `flux_kontext_couple_scene.txt.example` | `flux_kontext_couple_scene.qwen3vl.txt` |
+| Qwen-Image-Edit – Couple Scene | `qwen_image_edit_couple_scene.txt.example` | `qwen_image_edit_couple_scene.qwen3vl.txt` |
+| SDXL Pony – Random Character | `random_character_pony.txt.example` | `random_character_pony.qwen3vl.txt` |
+| Z-Image – Random Character | `random_character_zimage.txt.example` | `random_character_zimage.qwen3vl.txt` |
+| Z-Image – Text-to-Image | `zimage_text_to_image.txt.example` | `zimage_text_to_image.qwen3vl.txt` |
+
+The basename comes from the mode's `template` field in
+`config/catalog.yaml.example` — see
+[`adding-a-mode.md`](adding-a-mode.md).
 
 **The public release ships no override files.** The table above shows
 the naming convention for overrides users can author themselves. Modes
-with strict tag syntax (SDXL, SDXL Pony/Illustrious), structural edits
-(FLUX Kontext Scene Edit), or user-supplied prompts (Custom System
-Prompt) generally benefit less from a model-specific override than
-free-form narrative modes do.
+with strict tag syntax (SDXL – Photorealistic, SDXL Pony – Illustrious),
+structural edits (FLUX Kontext – Scene Edit), or user-supplied prompts
+(Custom System Prompt) generally benefit less from a model-specific
+override than free-form narrative modes do.
 
 ## Writing a good override
 
@@ -85,10 +89,13 @@ rewrite. Style guidance:
   framing ("You are writing the scene…"), not imperative walls. Avoid
   `MUST`, `DO NOT`, `ONLY` in caps if your model gets stubborn under
   them.
-- **Keep the format anchors.** If the downstream model requires
-  `image 1` tokens, Pony quality tags, or identity-preservation
+- **Keep the format anchors.** If the downstream model requires image
+  reference tokens, Pony quality tags, or identity-preservation
   phrasing, those still appear — they're contracts with the
-  generator, not stylistic choices.
+  generator, not stylistic choices. Write the reference tokens as
+  `{img1}` / `{img2}`, never as a literal `image 1`: the catalog renders
+  them into the wording of the selected target model (see
+  [`architecture/prompt-catalog.md`](architecture/prompt-catalog.md)).
 - **Length budget: 150–300 words** of system prompt, similar to
   the defaults.
 - **Keep `{shared_rules}`** wherever the default uses it — the
@@ -112,7 +119,7 @@ map its tag to `qwen3vl`, or define your own family name). Then create
 `system_prompts/flux_kontext_couple_scene.qwen3vl.txt` and reframe the
 task in the register your model responds to. The opening line might be
 a neutral framing such as *"You are writing the scene where two people
-share a frame, drawing on image 1 and image 2 as references."* The hard
+share a frame, drawing on {img1} and {img2} as references."* The hard
 contracts the downstream generator needs — the opening anchor phrase,
 both image tokens, identity preservation, anatomy safety, length
 budget — should survive as quiet sentences inside the prose, not as a

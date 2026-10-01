@@ -16,33 +16,20 @@ from __future__ import annotations
 import time
 from typing import Optional
 
+from ..catalog import composer_style_labels, load_catalog, resolve_composer_style
 from ..engines import OllamaError, OpenAIError
 from ..post_processing import strip_llm_noise
 from ..prompts import render_template
 from .base_prompt_node import BasePromptNode
+from .catalog_validation import validation_message
 
-OUTPUT_STYLES = [
-    "FLUX.2 natural language",
-    "SDXL tag-based",
-    "Z-Image compact",
-    "Wan 2.2 motion",
-    "LTX-2.3 audio-video",
-    "Pony photoreal",
-    "Pony anime/illustrious",
-    "Krea 2 natural language",
-    "LTX-2.5 multi-shot",
-]
+# Derived views on the catalog, kept for callers that used to read the
+# hard-coded lists. The catalog is the source of truth; these are snapshots
+# taken at import time, while ``INPUT_TYPES`` reads the catalog live.
+OUTPUT_STYLES = [entry.label for entry in load_catalog().composer_styles]
 
 _STYLE_TO_FILE = {
-    "FLUX.2 natural language": "composer_flux2",
-    "SDXL tag-based":          "composer_sdxl",
-    "Z-Image compact":         "composer_zimage",
-    "Wan 2.2 motion":          "composer_wan22",
-    "LTX-2.3 audio-video":     "composer_ltx2",
-    "Pony photoreal":          "composer_pony_photoreal",
-    "Pony anime/illustrious":  "composer_pony_anime",
-    "Krea 2 natural language": "composer_krea2",
-    "LTX-2.5 multi-shot":      "composer_ltx25",
+    entry.label: entry.template for entry in load_catalog().composer_styles
 }
 
 
@@ -51,16 +38,19 @@ def _load_composer_system_prompt(
 ) -> str:
     """Return the rendered composer system prompt for the given output style.
 
+    ``style`` may be the current label or any former label kept as an alias
+    in the catalog, so saved workflows keep resolving after a rename.
+
     Honours the per-model override cascade (see :mod:`prompts` module
     docstring): if ``model_name`` resolves to a known family, an
     ``composer_<style>.<family>.txt`` override takes precedence over the
-    default. ``{shared_rules}`` substitution applies to both.
+    default. ``{shared_rules}`` substitution applies to both. Image
+    references render with the neutral ``Generic`` wording — the composer
+    has no target-model selector of its own.
 
     Raises ``KeyError`` for unknown styles.
     """
-    if style not in _STYLE_TO_FILE:
-        raise KeyError(f"Unknown output style: {style!r}")
-    return render_template(_STYLE_TO_FILE[style], model_name)
+    return render_template(resolve_composer_style(style).template, model_name)
 
 
 def _build_user_message(user_instruction: str, inputs: list[str]) -> str:
@@ -151,11 +141,12 @@ class PromptComposer(BasePromptNode):
     @classmethod
     def INPUT_TYPES(cls):  # noqa: N802 — ComfyUI API contract
         engine_inputs = cls._build_engine_inputs()
+        styles = composer_style_labels()
         return {
             "required": {
                 **engine_inputs,
                 "user_instruction": ("STRING", {"multiline": True, "default": ""}),
-                "output_style":     (OUTPUT_STYLES, {"default": "FLUX.2 natural language"}),
+                "output_style":     (styles, {"default": styles[0]}),
             },
             "optional": {
                 "input_1": ("STRING", {"forceInput": True}),
@@ -172,6 +163,19 @@ class PromptComposer(BasePromptNode):
     FUNCTION     = "compose"
     CATEGORY     = "prompt"
     OUTPUT_NODE  = False
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, output_style):  # noqa: N802 — ComfyUI API contract
+        """Accept current labels and the former labels kept as aliases.
+
+        Naming ``output_style`` here makes ComfyUI skip its own "Value not in
+        list" check for that input (see the guard in ``execution.py``), which
+        is what lets a workflow saved with an old label still queue. Unknown
+        values are rejected here instead, with the known ones listed.
+        """
+        return validation_message(
+            ("output_style", resolve_composer_style, output_style)
+        )
 
     def compose(
         self,

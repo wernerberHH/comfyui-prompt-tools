@@ -1,0 +1,384 @@
+# ---------------------------------------------------------------------------
+# Prompt catalog — the single place where the node dropdowns come from.
+#
+# Every selectable value in PromptHelper, VisionPromptHelper and
+# PromptComposer is defined here, not in Python. Adding a target model, a
+# PromptHelper mode, a composer style or a vision mode means adding ONE entry
+# below (plus a template file under `comfyui_prompt_tools/system_prompts/`
+# for the entries that have a `template`). No code change is needed.
+#
+# THIS FILE IS THE SHIPPED TRUTH and is overwritten by `git pull`.
+# To change it without losing your edits, put your changes in a sibling
+# `config/catalog.yaml` (gitignored). That file is OVERLAID onto this one,
+# matched by `id`:
+#
+#   * same `id`   -> the fields you give replace the shipped ones
+#   * new `id`    -> appended at the end of its section
+#   * `enabled: false` -> the entry disappears from the dropdown
+#
+# You only repeat the fields you want to change. Example `config/catalog.yaml`:
+#
+#   version: 1
+#   target_models:
+#     - id: my_model              # new entry, shows up in the dropdown
+#       label: "My Model"
+#       image_ref: "REF_{n}"
+#   vision_modes:
+#     - id: vision_describe_composition
+#       enabled: false            # hide a shipped mode you never use
+#
+# ---------------------------------------------------------------------------
+# Schema version. Bump only when the field layout changes; the loader
+# rejects a version it does not know.
+version: 1
+
+# ---------------------------------------------------------------------------
+# TARGET MODELS — the image/video models the prompts are written FOR.
+#
+# Fields
+#   id         required, unique. Stable internal key. Never rename it: local
+#              overlays and other sections point at it.
+#   label      required, unique (including `aliases`). Shown in dropdowns.
+#   image_ref  optional. Only for models that take reference images AND
+#              address them inside the prompt text. `{n}` is replaced by the
+#              image number. A template writes `{img1}` / `{img2}` and the
+#              renderer turns that into this pattern — so the same template
+#              produces `image 1` for FLUX Kontext and `<image1>` for
+#              Qwen-Image 2.1. Models without `image_ref` are pure
+#              text-to-image / text-to-video and are NOT offered in the
+#              VisionPromptHelper `target_model` dropdown.
+#   aliases    optional list of former labels that must keep working in
+#              saved workflows (see the mode sections below).
+#   enabled    optional, default true. `false` hides the entry.
+#
+# `Generic` must exist and must have an `image_ref`: it is the default for
+# the VisionPromptHelper and the pattern used when PromptHelper and
+# PromptComposer render their own templates.
+target_models:
+  - id: flux2
+    label: "FLUX.2"
+    # FLUX.2 multi-reference addresses its inputs as "image 1" / "image 2".
+    image_ref: "image {n}"
+
+  - id: zimage
+    label: "Z-Image"
+
+  - id: sdxl
+    label: "SDXL"
+
+  - id: sdxl_pony
+    label: "SDXL Pony"
+
+  - id: wan22
+    label: "Wan 2.2"
+
+  - id: ltx23
+    label: "LTX-2.3"
+
+  - id: ltx25
+    label: "LTX-2.5"
+
+  - id: krea2
+    label: "Krea 2"
+    image_ref: "Picture {n}"
+
+  - id: flux_kontext
+    label: "FLUX Kontext"
+    image_ref: "image {n}"
+
+  - id: qwen_image_edit_2511
+    label: "Qwen-Image-Edit 2511"
+    image_ref: "Picture {n}"
+
+  - id: qwen_image_21
+    label: "Qwen-Image 2.1"
+    image_ref: "<image{n}>"
+
+  - id: generic
+    label: "Generic"
+    # Today's wording — keep this entry as the neutral fallback.
+    image_ref: "image {n}"
+
+# ---------------------------------------------------------------------------
+# PROMPTHELPER MODES — the `mode` dropdown of the PromptHelper node.
+#
+# Fields
+#   id           required, unique.
+#   label        required, unique within this list (together with `aliases`).
+#   aliases      former labels. A saved workflow stores the LABEL as a plain
+#                string, so renaming a label would break every workflow that
+#                used it. Listing the old label here keeps those workflows
+#                running: the node resolves label OR alias to this entry.
+#                Never remove an alias once it has shipped.
+#   template     required. Basename under
+#                `comfyui_prompt_tools/system_prompts/` WITHOUT the suffix.
+#                The loader takes `<template>.txt` if you created one and
+#                falls back to the shipped `<template>.txt.example`.
+#   target_model required. An `id` from `target_models` above — which image
+#                model this mode writes for. PromptHelper currently renders
+#                every template with the `Generic` image reference, so this
+#                field documents the intent and is what a future per-node
+#                target-model selector will use.
+#   uses_random_pools  optional, default false. `true` makes the node feed the
+#                ethnicity / age / mood / hair pools into the user message and
+#                re-run on every queue instead of serving a cached result.
+#   enabled      optional, default true.
+#
+# The order below is the dropdown order.
+#
+# NOTE: the id `custom_system_prompt` is special-cased by the node — it uses
+# the node's `custom_system_prompt` text field instead of a template.
+prompt_helper_modes:
+  - id: flux_kontext_scene_edit
+    label: "FLUX Kontext – Scene Edit"
+    aliases: ["FLUX Kontext (Scene Edit)"]
+    template: flux_kontext_scene_edit
+    target_model: flux_kontext
+
+  - id: flux_kontext_couple_scene
+    label: "FLUX Kontext – Couple Scene"
+    aliases: ["FLUX Kontext (Couple Scene)"]
+    template: flux_kontext_couple_scene
+    target_model: flux_kontext
+
+  - id: qwen_image_edit_couple_scene
+    label: "Qwen-Image-Edit – Couple Scene"
+    aliases: ["Qwen Image Edit (Couple Scene)"]
+    template: qwen_image_edit_couple_scene
+    target_model: qwen_image_edit_2511
+
+  - id: flux_text_to_image
+    label: "FLUX – Text-to-Image"
+    aliases: ["FLUX Text-to-Image"]
+    template: flux_text_to_image
+    target_model: flux2
+
+  - id: zimage_text_to_image
+    label: "Z-Image – Text-to-Image"
+    aliases: ["Z-Image Text-to-Image"]
+    template: zimage_text_to_image
+    target_model: zimage
+
+  - id: sdxl_photorealistic
+    label: "SDXL – Photorealistic"
+    aliases: ["SDXL Photorealistic"]
+    template: sdxl_photorealistic
+    target_model: sdxl
+
+  - id: sdxl_pony_illustrious
+    label: "SDXL Pony – Illustrious"
+    aliases: ["SDXL Pony/Illustrious"]
+    template: sdxl_pony_illustrious
+    target_model: sdxl_pony
+
+  - id: random_character_zimage
+    label: "Z-Image – Random Character"
+    aliases: ["Random Character (Z-Image)"]
+    template: random_character_zimage
+    target_model: zimage
+    uses_random_pools: true
+
+  - id: random_character_pony
+    label: "SDXL Pony – Random Character"
+    aliases: ["Random Character (Pony)"]
+    template: random_character_pony
+    target_model: sdxl_pony
+    uses_random_pools: true
+
+  - id: ltx2_video
+    label: "LTX-2.3 – Video with Audio"
+    aliases: ["LTX-2.3 Video (Audio-Video)"]
+    template: ltx2_video
+    target_model: ltx23
+
+  - id: krea2_text_to_image
+    label: "Krea 2 – Text-to-Image"
+    aliases: ["Krea 2 Text-to-Image"]
+    template: krea2_text_to_image
+    target_model: krea2
+
+  - id: ltx25_video
+    label: "LTX-2.5 – Multi-Shot Video with Audio"
+    aliases: ["LTX-2.5 Video (Multi-Shot Audio-Video)"]
+    template: ltx25_video
+    target_model: ltx25
+
+  - id: custom_system_prompt
+    label: "Custom System Prompt"
+    template: custom_system_prompt
+    target_model: generic
+
+# ---------------------------------------------------------------------------
+# COMPOSER STYLES — the `output_style` dropdown of the PromptComposer node.
+# Same fields as `prompt_helper_modes` (minus `uses_random_pools`).
+composer_styles:
+  - id: composer_flux2
+    label: "FLUX.2 – Natural Language"
+    aliases: ["FLUX.2 natural language"]
+    template: composer_flux2
+    target_model: flux2
+
+  - id: composer_sdxl
+    label: "SDXL – Tags"
+    aliases: ["SDXL tag-based"]
+    template: composer_sdxl
+    target_model: sdxl
+
+  - id: composer_zimage
+    label: "Z-Image – Compact"
+    aliases: ["Z-Image compact"]
+    template: composer_zimage
+    target_model: zimage
+
+  - id: composer_wan22
+    label: "Wan 2.2 – Motion"
+    aliases: ["Wan 2.2 motion"]
+    template: composer_wan22
+    target_model: wan22
+
+  - id: composer_ltx2
+    label: "LTX-2.3 – Video with Audio"
+    aliases: ["LTX-2.3 audio-video"]
+    template: composer_ltx2
+    target_model: ltx23
+
+  - id: composer_pony_photoreal
+    label: "SDXL Pony – Photoreal"
+    aliases: ["Pony photoreal"]
+    template: composer_pony_photoreal
+    target_model: sdxl_pony
+
+  - id: composer_pony_anime
+    label: "SDXL Pony – Anime/Illustrious"
+    aliases: ["Pony anime/illustrious"]
+    template: composer_pony_anime
+    target_model: sdxl_pony
+
+  - id: composer_krea2
+    label: "Krea 2 – Natural Language"
+    aliases: ["Krea 2 natural language"]
+    template: composer_krea2
+    target_model: krea2
+
+  - id: composer_ltx25
+    label: "LTX-2.5 – Multi-Shot Video with Audio"
+    aliases: ["LTX-2.5 multi-shot"]
+    template: composer_ltx25
+    target_model: ltx25
+
+# ---------------------------------------------------------------------------
+# VISION MODES — the `mode` dropdown of the VisionPromptHelper node.
+#
+# Fields
+#   id, label, aliases, template, enabled  as above.
+#   kind     required, `edit` or `describe`.
+#              edit     — the output is an instruction for an image-editing
+#                         model, so it names the input images. Write those
+#                         references as `{img1}` / `{img2}` in the template;
+#                         the node renders them with the `image_ref` of the
+#                         `target_model` the user picked.
+#              describe — the output is a snippet for downstream composition
+#                         and must NOT contain any image reference.
+#   images   required, 1 or 2. `2` means the mode needs `image_2` wired up
+#              and the node refuses to run without it.
+#
+# A vision mode has no `target_model` field — the user picks it on the node.
+# Inside a template, always describe the INPUT images as "the first image" /
+# "the second image": that wording talks to the vision LLM and stays the same
+# for every target model. `{img1}` / `{img2}` are only for the text the vision
+# LLM is supposed to PRODUCE.
+#
+# The order of the images on the node must match their order on the image
+# model — `image_1` is `{img1}` there too.
+vision_modes:
+  # ---- Edit modes ---------------------------------------------------------
+  - id: vision_outfit_transfer
+    label: "Outfit Transfer"
+    template: vision_outfit_transfer
+    kind: edit
+    images: 2
+
+  - id: vision_hair_change
+    label: "Hair Change"
+    template: vision_hair_change
+    kind: edit
+    images: 1
+
+  - id: vision_body_reshape
+    label: "Body Reshape"
+    template: vision_body_reshape
+    kind: edit
+    images: 1
+
+  - id: vision_background_change
+    label: "Background Change"
+    template: vision_background_change
+    kind: edit
+    images: 1
+
+  - id: vision_pose_change
+    label: "Pose Change"
+    template: vision_pose_change
+    kind: edit
+    images: 1
+
+  - id: vision_combined_edit
+    label: "Combined Edit"
+    template: vision_combined_edit
+    kind: edit
+    images: 1
+
+  # ---- Describe modes -----------------------------------------------------
+  - id: vision_describe_picture
+    label: "Describe Picture"
+    template: vision_describe_picture
+    kind: describe
+    images: 1
+
+  - id: vision_describe_face
+    label: "Describe Face"
+    template: vision_describe_face
+    kind: describe
+    images: 1
+
+  - id: vision_describe_hair
+    label: "Describe Hair"
+    template: vision_describe_hair
+    kind: describe
+    images: 1
+
+  - id: vision_describe_body
+    label: "Describe Body"
+    template: vision_describe_body
+    kind: describe
+    images: 1
+
+  - id: vision_describe_pose
+    label: "Describe Pose"
+    template: vision_describe_pose
+    kind: describe
+    images: 1
+
+  - id: vision_describe_outfit
+    label: "Describe Outfit"
+    template: vision_describe_outfit
+    kind: describe
+    images: 1
+
+  - id: vision_describe_background
+    label: "Describe Background"
+    template: vision_describe_background
+    kind: describe
+    images: 1
+
+  - id: vision_describe_lighting
+    label: "Describe Lighting"
+    template: vision_describe_lighting
+    kind: describe
+    images: 1
+
+  - id: vision_describe_composition
+    label: "Describe Composition"
+    template: vision_describe_composition
+    kind: describe
+    images: 1
