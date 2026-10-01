@@ -14,6 +14,7 @@ from ..random_pools import (
     pick_age,
     pick_from_pool,
 )
+from ..template_status import describe_resolved_source
 from .base_prompt_node import BasePromptNode
 from .catalog_validation import validation_message
 
@@ -47,6 +48,19 @@ def _is_custom_system_prompt(mode) -> bool:
     """True for the catch-all mode driven by the node's own text field."""
     entry = _mode_entry(mode)
     return entry is not None and entry.id == _CUSTOM_SYSTEM_PROMPT_ID
+
+
+def _template_source(mode, model) -> str:
+    """Describe where this run's system prompt comes from, for the log line.
+
+    Names the file the loader resolves — including a local copy that hides
+    the shipped template. An unknown mode is reported as such rather than
+    raised: the regular path below produces the real error message.
+    """
+    entry = _mode_entry(mode)
+    if entry is None:
+        return "(unknown mode)"
+    return describe_resolved_source(entry.template, model_name=model)
 
 
 class PromptHelper(BasePromptNode):
@@ -194,12 +208,16 @@ class PromptHelper(BasePromptNode):
         outfit_style_pool: str = "",
     ):
         # ---- 1. Decide system prompt and user message ------------------
+        # ``template_source`` names the file the system prompt actually came
+        # from. This node has no debug_info output, so it goes into the
+        # summary log line below — see docs/system-prompt-overrides.md.
         if _uses_random_pools(mode):
             user_message, chosen = self._build_random_character_message(
                 prompt, ethnicity_pool, age_pool, mood_pool, hair_pool,
                 lighting_pool, setting_pool, outfit_style_pool,
             )
             system_prompt = get_system_prompt(mode, model_name=model)
+            template_source = _template_source(mode, model)
             print(f"\n[PromptHelper] === {mode} ===")
             print(f"[PromptHelper] Slots: {chosen}")
             constraints_preview = (prompt.strip() or "(none)")[:120]
@@ -210,12 +228,14 @@ class PromptHelper(BasePromptNode):
                 return ("", "")
             system_prompt = custom_system_prompt.strip()
             user_message = prompt + " /no_think"
+            template_source = "(custom_system_prompt input)"
 
         else:
             if not prompt.strip():
                 return ("", "")
             system_prompt = get_system_prompt(mode, model_name=model)
             user_message = prompt + " /no_think"
+            template_source = _template_source(mode, model)
 
         # ---- 2. Resolve engine and call --------------------------------
         try:
@@ -254,7 +274,10 @@ class PromptHelper(BasePromptNode):
         # ---- 4. Cleanup + return ---------------------------------------
         enhanced = strip_llm_noise(enhanced)
 
-        print(f"[PromptHelper] Mode: {mode} | Engine: {engine} | Model: {model}")
+        print(
+            f"[PromptHelper] Mode: {mode} | Engine: {engine} | Model: {model} | "
+            f"Template: {template_source}"
+        )
         print(f"[PromptHelper] Enhanced: {enhanced[:200]}...")
 
         return (enhanced, prompt)

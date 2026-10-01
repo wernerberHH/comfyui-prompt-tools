@@ -7,6 +7,42 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Local system-prompt copies are reported at startup.** A
+  `system_prompts/<name>.txt` always wins over the shipped
+  `<name>.txt.example` — that is what keeps local edits through a
+  `git pull`, and it also means an update cannot reach a template a user
+  has a copy of. Nothing removes those copies: the ComfyUI-Manager unpacks
+  a release over the node folder and only deletes files that belonged to
+  the previous package. The nodes now check their own template directory
+  once per process and summarise what they find in the ComfyUI log, in one
+  block, with the full path per file and what to do about it:
+  `outdated-copy` (an unchanged copy of an older shipped template — safe to
+  delete), `customized` (a real local edit — re-apply it on top of the new
+  template or delete the copy), `stale-shipped-override` (a model-family
+  override left behind by an older release). Copies identical to the
+  current template and self-authored overrides are counted, not listed.
+  The check is read-only: no file is changed, renamed or deleted.
+  A `customized` copy backing an image-edit mode that carries no `{imgN}`
+  placeholders is additionally flagged, because `target_model` cannot take
+  effect on it.
+- **`system_prompts/shipped_hashes.json`** — the digest of every version of
+  every system-prompt template this package has ever shipped, newest first,
+  generated from the git history by the new
+  `scripts/update_shipped_hashes.py`. This is what makes an untouched copy
+  of an older template distinguishable from a deliberate local edit.
+  Digests cover the normalised text (UTF-8, `\n` line endings, no trailing
+  newline), so an editor rewriting line endings does not look like an edit.
+  A missing or unreadable file skips the check with one warning — the nodes
+  load normally. `tests/unit/test_shipped_hashes.py` fails if a shipped
+  template changes without the file being regenerated.
+- **Each node names the system-prompt file a run actually used.**
+  PromptComposer and VisionPromptHelper gained a `Template:` field in their
+  existing `debug_info` output, PromptHelper reports it in its summary log
+  line (it has no `debug_info` output) — e.g.
+  `Template: vision_outfit_transfer.txt (local copy, customized)` or
+  `Template: composer_flux2.txt.example (shipped)`. The model-family
+  cascade is followed, so the file named is the one that was read. No node
+  input or output was added or changed.
 - **Prompt catalog** — every dropdown value now comes from one data file,
   `config/catalog.yaml.example`: the PromptHelper modes, the PromptComposer
   output styles, the VisionPromptHelper modes, and the image / video models

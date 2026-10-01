@@ -1,0 +1,163 @@
+{
+  "retired_override_versions": {
+    "flux_kontext_couple_scene": [
+      "13b57f43488bc8fced8c8510eff35183fc7b38911faf352c0f045adfc3fe5e46"
+    ],
+    "qwen_image_edit_couple_scene": [
+      "438643885842aaeb2c71a3bfbff5087b089504ddbdc0c0ae1fac89e11a2e9666"
+    ],
+    "random_character_pony": [
+      "f078e66d8cf253870feda5eeecaf7c528ada029f02ca923fe84261901721639d"
+    ],
+    "random_character_zimage": [
+      "ecd47b00c0f99f11841bf83d2ca232b8f1a0e594c6e637917d8d5faa3106cd88"
+    ],
+    "zimage_text_to_image": [
+      "96e1ac97e31a1321c26ac8158b20e9bb0d9bab8ae45ee0fc4363daa856f17bca"
+    ]
+  },
+  "templates": {
+    "_shared_rules": [
+      "71c965b25786c6149e2120a8714143c6b641cfacfdae6ea1efcfd412fbb9f18f",
+      "e62097a263b8d6a0c18d58ae22c8ae027b9ce43fd5708198a2aed4d06ad35a63"
+    ],
+    "composer_flux2": [
+      "3ae29b26fba7639022039236bd20836345dd9d3e13fec12f79b66406bee3c58e"
+    ],
+    "composer_krea2": [
+      "cb1b9b546172e3dbc34b898e89da15ec007a540537ecb4598e9797b7048ae112"
+    ],
+    "composer_ltx2": [
+      "c30070b082761fa2f9ec30aaf16708ce4aa1fcd536f912aa5977e70f43f73d02"
+    ],
+    "composer_ltx25": [
+      "69a851c06ebd1b85a7a71072319dc162b73831306ff80b07a5f75f9fbec39a05"
+    ],
+    "composer_pony_anime": [
+      "d39891f5978371e8627676b0e394dec1e0057369439a0dff445ce122c072243f"
+    ],
+    "composer_pony_photoreal": [
+      "1be39e70979ebe8f42852e0b2325a998ea3b0e4e08dc4e0808d791cc87c715aa"
+    ],
+    "composer_sdxl": [
+      "de0afbda2dd02c72f33cb151463ae1b5049062eaa8b02f164e656cd1245ba5ba"
+    ],
+    "composer_wan22": [
+      "ec44f5cf33b0cbe8c7f9b62b28d65b2bd2facb26b5fe09b3a650f90dfc598737"
+    ],
+    "composer_zimage": [
+      "471bea1041211d77f91845316bf58ad6fa16a1e14cfe739acfe001e55e985faa"
+    ],
+    "custom_system_prompt": [
+      "37d20ab481d3d443fff7bfa038cc83496c822552fd4122c70207791371a83845"
+    ],
+    "flux_kontext_couple_scene": [
+      "c1abd26f7aa5e111174d32fa0af0426e1965fea163827cf5d16be535abb509ed",
+      "87c98d6ef04c92d0b8668750c175d477354d53eb7ad1321ba9ba986fd26b22d2"
+    ],
+    "flux_kontext_scene_edit": [
+      "5a86eb4eee7e1180c1289222bda7ae3dc0703394c2107ab252fd1bc5893f5d39"
+    ],
+    "flux_text_to_image": [
+      "4b3f912fbb08a65505222a665e50aa5eff0b6b033acf35d5a0f488fafc08bf07"
+    ],
+    "krea2_text_to_image": [
+      "985875822b2d2dd3126f8727aad2a087aa1501ad752f638938b9b6c7411c2bf6"
+    ],
+    "ltx25_video": [
+      "281150c3b8b6f4cea7a81791bd6028aa890e90bebc77e0f3ebc1c832a368b3c3"
+    ],
+    "ltx2_video": [
+      "9186d3edb9fd95ee320b2361ccf142e88c19ca73e11b494926dc8a2a68b5169b"
+    ],
+    "qwen_image_edit_couple_scene": [
+      "ccb2c9cdb00dda5a3b572b5044204e3764d69250beccbc0020f2e2ccabec2a47",
+      "789ebbd1e53bbb9ab77f953a3e7f795060527e38d207b1f789656cd1387505ad"
+    ],
+    "random_character_pony": [
+      "d8a0fad6962828a7a1b24c8bfd3f3c17893de1f0f075ede2db5c59f87be0e42d",
+      "658781629d39786ea8243d8ead20e4cf15eac7cf20feef42c74b51781a69de20"
+    ],
+    "random_character_zimage": [
+      "b00326ee6dc0c68d58d9ae58a1751414627a477151c346dbdba4906826337dd0"
+    ],
+    "sdxl_photorealistic": [
+      "e74773b0a70ac6595f84cd02266caf2a17c26728616b241f825508137f9850cf"
+    ],
+    "sdxl_pony_illustrious": [
+      "9f70527eaed4fed0272eda30bd5c5efaba338fb862c6ecbdf0f187ea70207958",
+      "7f0695781f2ecf6b7a2862df8002f904ee29d758ad0690872cbd819773e9e31f"
+    ],
+    "vision_background_change": [
+      "ae47f6aa297f6d5455c33ca81d5e6da2b2b48814ad41db309142c04f9dd5ce59",
+      "0c396939285a176bfce545de823526a954e6d4c083e89d9ef033d0529ce332c5",
+      "3ee8e845132e7438342b53de23de5b8ee84ab5919a87ffb23ef7debf7be74036"
+    ],
+    "vision_body_reshape": [
+      "0f8b737f54ebcd91abf0156473c04decf72a2308d0688145f1c14e620ead641f",
+      "b9391bac084abff2880be957e0ecb63cec8420484759f520e6e80f9990420b11",
+      "e4c4e1ef1566d0fd74c507d0469248c627e905d7ba8e54ca5fcef1a27d7536a9"
+    ],
+    "vision_combined_edit": [
+      "b201295e0949d8c0867bab8de9946303372604c0257d596879c73644b02e5cc3",
+      "fc3274fb1ec66d900c220e3a408ddb9783533102b3d27412f437df492e10c0a2",
+      "d42a0d1ca92e795246f1d69ca0c4d70ad7bb39a3257be6d58c84a53f7b1a29b4"
+    ],
+    "vision_describe_background": [
+      "9dc868dbe5ce06e6f850efdc3770416cfdfa971d221b0f5014c5471420e594d2",
+      "9626714d81a23345b8cf79c050e4bfe6f06f87a3f787c6106fcde17e95232c76"
+    ],
+    "vision_describe_body": [
+      "6ef2e122b4d252174654075e1f76bcb554c97c09a37820acd58a9f68cdafac6f",
+      "4665f20ac814761ec945174af6ae7444097457530709e9f8d253ad81d7fe290b"
+    ],
+    "vision_describe_composition": [
+      "20043fd9a30e4fe5874e5de0fb48ac749234c2bdb5bc27a211bd17a0742ca645",
+      "b5e89ae19a6d95f0f81d91478bee60116e2c5c01512789543d72513c6bc5b1eb"
+    ],
+    "vision_describe_face": [
+      "6e035f2da42265587ed22ee4b2b69eba65e0e5ac534e92a90b2b3af2847210cc",
+      "a5ad89b3559fa22fbc198ba826d957952bf0b5b3d45e7f655f9b92a2c5d794d1"
+    ],
+    "vision_describe_hair": [
+      "aa9f6fc4c96d745f406d9be667c2b3d24a8d29cfd3014cbecd5fe166a9bdbe6e",
+      "7b6145a436156f0cfe199156093089eaf1d40e85fd7c2a1dbe64281a7d84bc72"
+    ],
+    "vision_describe_lighting": [
+      "02795b447cd578c3318e435e63310daa85ac5f847f5c87787089b43217df5d87",
+      "4f6955d3972471cd509f9fa5643a981cb5306e4dfaca49318d1bead4f747aff4"
+    ],
+    "vision_describe_outfit": [
+      "ce1952f2bbd2ce3fc1245cbb4c4679002b60a7ebf05f8cd87fb11fec3647d673",
+      "53841028b9c6f38d106bfdd20d44d9cade6266fbc268d62986afc7eb36becc3d"
+    ],
+    "vision_describe_picture": [
+      "d497842fd0b40fec9b3889f0c5e746029e85a8c7035c8a4d370392d8a9059a69",
+      "09b923779b621c1b7347dd5fe7b3c052707b036a7a8e01dcdcb70a0c9824a326",
+      "1fc54591982736dc7b20336c9658e1d12b8be93e4fcce64cc1a2a0357cb7c511"
+    ],
+    "vision_describe_pose": [
+      "0eccab8940179a6d6fe57196f5645ba44ff0d39f9ccf686fdbd3d982b46d0790",
+      "b3bb55f0329f236e9fd7e91e1eb5a6fa1502285e0d59d18a2b24f35c812f0947"
+    ],
+    "vision_hair_change": [
+      "af571f4316a23f5abc3f6f676c4819b47e0745ba34cda1ed9f9ab0e5d3fe6913",
+      "6d83a7cd7c9512a51eee5b899b4183380f6e5121571cf1808e94a7b1729b9f83",
+      "b34b18aea813f2ffffc5961942d92557d408d4abe65cc78db47e72ea628a288c"
+    ],
+    "vision_outfit_transfer": [
+      "a37f65a322e6e322b71bca280b917bf2b61b059b53492236053afc792eab8e4c",
+      "c25b4535bc1cf523a70220844a637be5bac38de60c2b3f6232bc6aa1603c4b78",
+      "ac1955addcc5489792a439e6e604eb684a0077d5da8ed22a35fadb755ac87e40",
+      "fc40b09145d6d6771022b479ef922e3fa19ffbf4a2f2216bdc5e51d8c876fcef"
+    ],
+    "vision_pose_change": [
+      "0052eb43dec62e07de5b8fda0782f9cef3b37dbcfa818c20753c15a51a1764e9",
+      "9aba7a523d7137812420f24871501f33f33348953ce35c0c29e0295fe6e49240",
+      "5ff2810071f52092c5a2cedb7acc39ad0b5f661aaf212fdc846adeb641e95c39"
+    ],
+    "zimage_text_to_image": [
+      "de48950c0ce2a6511c23061df45f19a938824ad8ba227ca06fc6df042ec97232"
+    ]
+  }
+}
