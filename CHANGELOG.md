@@ -5,6 +5,8 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-10-25
+
 ### Upgrade notice — read before updating
 
 **Your own system-prompt files are kept exactly as they are.** If you ever
