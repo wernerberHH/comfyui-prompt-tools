@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "comfyui-prompt-tools"
-version = "1.1.4"
+version = "1.2.0"
 description = "Stop hand-crafting prompts. Pipe your ideas through an LLM right inside ComfyUI — works with local backends (Ollama, vLLM, no API cost, full privacy) or cloud APIs (OpenAI, Claude via OpenRouter, Gemini), and ships text-to-image, multi-reference vision-to-prompt, pipeline composition, and AI/manual switching nodes."
 readme = "README.md"
 license = { text = "MIT" }
@@ -42,9 +42,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    # Used by config_loader to parse config/endpoints.yaml for the URL /
-    # model autocomplete dropdowns in BasePromptNode. If unavailable, the
-    # nodes still work with plain text inputs.
+    # Required: catalog.py reads config/catalog.yaml.example (mode lists,
+    # output styles, image-reference notation per target model) and
+    # config_loader reads config/endpoints.yaml. ComfyUI itself ships pyyaml,
+    # so this is normally already installed.
     "pyyaml>=6.0",
 ]
 
