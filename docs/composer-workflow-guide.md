@@ -201,6 +201,18 @@ The same works for tag prompts: in `masterpiece, 1girl, long red hair,
 curly hair, yellow sundress, sunflower field` a hair input replaces
 `long red hair` and removes `curly hair` together with its comma.
 
+**Replaced means the same feature, not the same area.** Clothing counts per
+garment type (top, dress, trousers/skirt, jacket/coat, shoes, accessories):
+an input with `an olive bomber jacket worn open over the dress` adds the
+jacket and keeps the yellow summer dress. A dress gives way to a new dress
+or to a top plus trousers/skirt; only an input that describes a complete
+outfit replaces the whole outfit. Likewise an eye-colour input does
+not touch the hairstyle. In both modes the LLM is told to describe only the
+final picture and never mention what was replaced. In `adapt to output
+style` the node also removes what slips through — a trailing clause like
+`, replacing the previous long red hair` — and reports it in `debug_info`
+as `Back-references removed: N`.
+
 Things to know about `keep verbatim`:
 
 - **`output_style` is not used.** The replacements follow the language and

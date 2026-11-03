@@ -13,13 +13,30 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (`keep verbatim` / `adapt to output style`). Paste an existing prompt into
   `base_prompt`; the parts that describe a feature an input covers are
   replaced by that input, missing features are added, everything else stays.
+  - An input replaces only the same feature at the same level of detail.
+    Clothing counts per garment type (top, dress, trousers/skirt,
+    jacket/coat, shoes, accessories): a new garment replaces only one of the
+    same type, other garments are added — a jacket over a dress keeps the
+    dress; a dress gives way to a new dress or to a top plus trousers/skirt.
+    Only an input that explicitly describes a complete outfit replaces
+    the whole outfit. Face, hair and background follow the same rule (an eye
+    colour does not replace the hairstyle).
+  - The LLM is told to describe only the final picture and never to mention
+    replaced features ("replacing …", "instead of …", "previously …"),
+    since the image model would read them as part of the picture.
   - `keep verbatim` (default): the LLM returns a JSON edit list, the node
     applies it — untouched text is kept character for character even if the
     LLM ignores its instructions. Edits that cannot be located or overlap are
     skipped and counted; an unreadable reply is an `ERROR:`, never a silent
     rewrite. `output_style` is not used in this mode.
   - `adapt to output style`: the normal style template plus a base-prompt
-    directive; the whole prompt is phrased in the output style.
+    directive; the whole prompt is phrased in the output style. A safety net
+    removes what the LLM still writes about replaced features: a trailing
+    clause such as `, replacing the previous long red hair` (comma + intro
+    phrase + a word like `previous`/`original`/`earlier`, up to the sentence
+    end) and short sentences that consist only of such a back-reference.
+    `debug_info` then reports `Back-references removed: N`. Phrases without a
+    back-reference word (`contrasting with the misty surroundings`) stay.
   - `debug_info` reports e.g. `Base prompt: verbatim | Replaced: 2 | Added: 1 | Skipped: 0`.
   - New template `system_prompts/composer_base_prompt_replace.txt.example`
     (overridable like every other template; not an output style).
