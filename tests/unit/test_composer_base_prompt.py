@@ -16,16 +16,20 @@ Mocks:
 from __future__ import annotations
 
 import json
+import re
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from comfyui_prompt_tools.base_prompt_edits import apply_edits, parse_edit_list
+from comfyui_prompt_tools.catalog import PROMPTS_DIR
 from comfyui_prompt_tools.nodes.prompt_composer import (
     BASE_PROMPT_ADAPT,
     BASE_PROMPT_KEEP,
     BASE_PROMPT_REPLACE_TEMPLATE,
     BASE_PROMPT_REST_CHOICES,
     PromptComposer,
+    _build_base_prompt_directive,
     _build_lora_keywords_directive,
     _load_composer_system_prompt,
 )
@@ -275,12 +279,44 @@ class TestAdaptToOutputStyle:
             "INPUT DESCRIPTIONS:\n[1] short platinum bob\n\n"
             "Compose ONE prompt from the base prompt: replace what the inputs "
             "cover, add what is missing, keep the rest, in the required output "
-            "style.\n/no_think"
+            "style. Describe only the final result — never mention what was "
+            "replaced.\nBefore you answer, check every sentence: if it names a "
+            "feature from the base prompt that an input replaced (in any "
+            "wording), delete that part — end the sentence right after the new "
+            "feature.\n/no_think"
         )
         # strip_llm_noise still applies to the free-text reply
         assert out == "A woman with a platinum bob walks through fog."
         assert "Base prompt: adapted" in debug
         assert "Template: composer_flux2.txt" in debug
+
+    def test_directive_replaces_per_garment_type(self):
+        directive = _build_base_prompt_directive()
+        assert "SAME feature at the same level of detail" in directive
+        assert "per garment type" in directive
+        for garment in ("top", "dress", "trousers", "skirt", "jacket", "coat",
+                        "shoes", "accessories"):
+            assert garment in directive
+        assert "a jacket does not replace a dress" in directive
+        assert "A dress covers the top and the bottom" in directive
+        assert "explicitly describes a complete outfit" in directive
+        assert "an eye colour does not replace the hairstyle" in directive
+
+    def test_directive_forbids_mentioning_replaced_features(self):
+        directive = _build_base_prompt_directive()
+        assert "Describe only the final result" in directive
+        assert "must not appear in your output in any form" in directive
+        for phrase in ("replacing", "instead of", "previously", "no longer",
+                       "rather than"):
+            assert f'"{phrase}"' in directive
+
+    def test_user_message_repeats_final_result_rule(self):
+        _, _, mock = _run("x", base_prompt=BASE, base_prompt_rest=BASE_PROMPT_ADAPT,
+                          input_1="short platinum bob")
+        _, user_message = _sent(mock)
+        assert "never mention what was replaced" in user_message
+        assert "check every sentence" in user_message
+        assert user_message.endswith("/no_think")
 
     def test_base_prompt_only_restyles(self):
         _, _, mock = _run("restyled", base_prompt=BASE, base_prompt_rest=BASE_PROMPT_ADAPT)
@@ -357,6 +393,59 @@ class TestReplaceTemplate:
 
         templates = {e.template for e in load_catalog().composer_styles}
         assert BASE_PROMPT_REPLACE_TEMPLATE not in templates
+
+
+class TestReplaceTemplateRules:
+    """The shipped template states the same-feature rules (read from the
+    ``.example`` file directly, so a local copy cannot mask a change)."""
+
+    @pytest.fixture(scope="class")
+    def text(self):
+        path = PROMPTS_DIR / f"{BASE_PROMPT_REPLACE_TEMPLATE}.txt.example"
+        return path.read_text(encoding="utf-8")
+
+    def test_same_feature_same_level_of_detail(self, text):
+        assert "SAME FEATURE MEANS THE SAME THING AT THE SAME LEVEL OF DETAIL" in text
+
+    def test_clothing_per_garment_type(self, text):
+        assert "Clothing counts per garment type" in text
+        for garment in ("top", "dress", "trousers or skirt", "jacket or coat",
+                        "shoes", "accessories"):
+            assert garment in text
+        assert "A new garment replaces only a garment of the SAME type" in text
+        assert "a jacket does not replace a dress" in text
+
+    def test_dress_covers_top_and_bottom(self, text):
+        assert "A dress covers the top and the bottom" in text
+
+    def test_complete_outfit_may_replace_the_outfit(self, text):
+        assert "explicitly describes a complete outfit" in text
+
+    def test_face_hair_background_follow_the_same_rule(self, text):
+        assert "eye colour does not replace the hairstyle" in text
+        assert "a new location does not replace the time of day" in text
+
+    def test_never_mention_the_old_feature(self, text):
+        assert "Never mention what was there before" in text
+        for phrase in ("replacing", "instead of", "previously", "no longer",
+                       "rather than"):
+            assert phrase in text
+
+    def test_jacket_example_keeps_the_dress(self, text):
+        assert "a cropped white denim jacket worn over the dress" in text
+        assert "so it is added and the dress stays" in text
+
+    def test_examples_match_apply_edits(self, text):
+        """Every worked example's Result is what the program really makes of
+        its Answer — the model must not learn from a wrong result."""
+        examples = re.findall(
+            r"^Base prompt: (.+)\n(?:.+\n)*?Answer: (\{.+\})\nResult: (.+)$",
+            text,
+            flags=re.MULTILINE,
+        )
+        assert len(examples) == 2
+        for base, answer, result in examples:
+            assert apply_edits(base, *parse_edit_list(answer)).text == result
 
     @pytest.fixture
     def prompts_dir(self, tmp_path, monkeypatch):

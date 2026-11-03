@@ -13,6 +13,17 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (`keep verbatim` / `adapt to output style`). Paste an existing prompt into
   `base_prompt`; the parts that describe a feature an input covers are
   replaced by that input, missing features are added, everything else stays.
+  - An input replaces only the same feature at the same level of detail.
+    Clothing counts per garment type (top, dress, trousers/skirt,
+    jacket/coat, shoes, accessories): a new garment replaces only one of the
+    same type, other garments are added — a jacket over a dress keeps the
+    dress; a dress gives way to a new dress or to a top plus trousers/skirt.
+    Only an input that explicitly describes a complete outfit replaces
+    the whole outfit. Face, hair and background follow the same rule (an eye
+    colour does not replace the hairstyle).
+  - The LLM is told to describe only the final picture and never to mention
+    replaced features ("replacing …", "instead of …", "previously …"),
+    since the image model would read them as part of the picture.
   - `keep verbatim` (default): the LLM returns a JSON edit list, the node
     applies it — untouched text is kept character for character even if the
     LLM ignores its instructions. Edits that cannot be located or overlap are

@@ -120,6 +120,23 @@ def _build_base_prompt_directive() -> str:
         "prompt — scene, setting, lighting, pose, camera, composition — with "
         "its content intact, but phrase the whole prompt in the required "
         "output style. The user instruction, if any, still takes precedence."
+        "\nAn input replaces only the SAME feature at the same level of "
+        "detail. Clothing counts per garment type (top, dress, trousers or "
+        "skirt, jacket or coat, shoes, accessories): a new garment replaces "
+        "only a garment of the same type; a garment of another type is added "
+        "and worn together with the existing ones — a jacket does not replace "
+        "a dress. A dress covers the top and the bottom: a new dress, or an "
+        "input that brings both a top and trousers or a skirt, replaces it. "
+        "Only an input that explicitly describes a complete outfit "
+        "replaces the whole outfit. The same holds for face, hair and "
+        "background: an eye colour does not replace the hairstyle."
+        "\nDescribe only the final result. Write the prompt as if the base "
+        "prompt had always described the input's feature: a replaced feature "
+        "is gone and must not appear in your output in any form — not even "
+        "as a comparison. Never write \"replacing\", \"instead of\", "
+        "\"previously\", \"no longer\" or \"rather than\". If a sentence "
+        "compares a new feature with an old one, end the sentence right "
+        "after the new feature."
     )
 
 
@@ -145,7 +162,11 @@ def _build_base_prompt_user_message(
 
     parts.append(
         "Compose ONE prompt from the base prompt: replace what the inputs "
-        "cover, add what is missing, keep the rest, in the required output style."
+        "cover, add what is missing, keep the rest, in the required output style. "
+        "Describe only the final result — never mention what was replaced.\n"
+        "Before you answer, check every sentence: if it names a feature from "
+        "the base prompt that an input replaced (in any wording), delete that "
+        "part — end the sentence right after the new feature."
     )
     parts.append("/no_think")
     return "\n".join(parts)

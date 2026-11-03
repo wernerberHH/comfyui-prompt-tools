@@ -5,6 +5,13 @@ YOUR TASK.
 2. If an input describes a feature the base prompt does not mention at all, it becomes an addition.
 3. Leave everything else alone: scene, setting, lighting, pose, camera, composition, style and quality terms, and every feature no input covers. If the base prompt describes a feature that an input does NOT cover, it is not yours to change.
 
+SAME FEATURE MEANS THE SAME THING AT THE SAME LEVEL OF DETAIL.
+- Clothing counts per garment type: top (shirt, blouse, t-shirt, sweater), dress, trousers or skirt, jacket or coat, shoes, accessories (bag, hat, jewellery, belt, scarf, glasses). A new garment replaces only a garment of the SAME type. A garment of another type is an addition and is worn together with what the base prompt already has: a jacket does not replace a dress, shoes do not replace trousers, a bag replaces nothing.
+- A dress covers the top and the bottom: it is replaced by a new dress, or by an input that brings both a top and a trousers/skirt.
+- Only an input that explicitly describes a complete outfit (a whole look from top to bottom, a suit, a uniform, "outfit: ...") may replace the whole outfit of the base prompt.
+- The same holds for face, hair and background: eye colour does not replace the hairstyle, make-up does not replace the eyes, a hair colour alone replaces only the colour words, a new location does not replace the time of day or the weather unless the input describes them too.
+- When in doubt, add instead of replace: losing a detail of the base prompt is worse than keeping one.
+
 REPLACEMENTS.
 - "find" must be copied character for character from the base prompt — same spelling, same case, same punctuation. Never paraphrase it, never shorten it with "...". If you cannot copy it exactly, leave the entry out.
 - Make "find" cover exactly the words for that feature, nothing more. For "a woman with long red curly hair in a yellow dress" and a hair input, "find" is "long red curly hair", not the whole phrase.
@@ -12,6 +19,7 @@ REPLACEMENTS.
 - "replace" carries the input's content but must fit seamlessly where "find" stood: same language as the base prompt, same form (comma tags stay comma tags, prose stays prose), and correct grammar with the words before and after it. Keep the grammatical role of the replaced words: if "find" was "in a yellow summer dress", "replace" starts with "in a ...", not with a verb. Keep it short — the key visual facts of the input, not its full text.
 - If one feature is spread over several separate parts (for example the tags "red hair" and "long hair" far apart in a tag list), put the new description in the first part and use an empty "replace" ("") for the others; the program removes them together with their separator.
 - One entry per part. Parts must not overlap.
+- "replace" and "insert" describe only the new result. Never mention what was there before: no "replacing ...", "instead of ...", "previously", "no longer", "rather than". The image model would read the old feature as part of the picture.
 
 ADDITIONS.
 - "insert" is the new feature, worded to fit the base prompt like a replacement.
@@ -23,12 +31,18 @@ ADDITIONS.
 CHECK BEFORE ANSWERING.
 Read the base prompt with your edits applied. It must read as one grammatical prompt in the base prompt's own form, and every part you did not edit must still be there.
 
-EXAMPLE.
+EXAMPLES.
 Base prompt: a man with short brown hair in a grey suit standing on a rooftop at night, city lights, cinematic
-Inputs: [1] navy double-breasted blazer with white shirt  [2] short black beard, round glasses
-Answer: {"replacements": [{"find": "in a grey suit", "replace": "in a navy double-breasted blazer and white shirt"}], "additions": [{"after": "short brown hair", "insert": ", a short black beard and round glasses"}]}
-Result: a man with short brown hair, a short black beard and round glasses in a navy double-breasted blazer and white shirt standing on a rooftop at night, city lights, cinematic
-Wrong: "after": "a man with" — it ends inside the phrase "with short brown hair".
+Inputs: [1] navy double-breasted suit, white shirt, brown loafers  [2] short black beard, round glasses
+Answer: {"replacements": [{"find": "in a grey suit", "replace": "in a navy double-breasted suit, white shirt and brown loafers"}], "additions": [{"after": "short brown hair", "insert": ", a short black beard and round glasses"}]}
+Result: a man with short brown hair, a short black beard and round glasses, in a navy double-breasted suit, white shirt and brown loafers standing on a rooftop at night, city lights, cinematic
+Input [1] is a complete outfit, so it replaces the suit. Wrong: "after": "a man with" — it ends inside the phrase "with short brown hair".
+
+Base prompt: a girl with straight black hair in a blue linen dress sitting on a wooden pier at sunset, warm light
+Inputs: [1] curly auburn hair in a high ponytail  [2] a cropped white denim jacket worn over the dress
+Answer: {"replacements": [{"find": "straight black hair", "replace": "curly auburn hair in a high ponytail"}], "additions": [{"after": "in a blue linen dress", "insert": "and a cropped white denim jacket"}]}
+Result: a girl with curly auburn hair in a high ponytail in a blue linen dress and a cropped white denim jacket, sitting on a wooden pier at sunset, warm light
+The jacket is a different garment type than the dress, so it is added and the dress stays. Wrong: {"find": "in a blue linen dress", "replace": "in a cropped white denim jacket"} — the dress would be lost. Wrong: "replace": "curly auburn hair in a high ponytail instead of straight black hair" — never mention the old feature.
 
 USER INSTRUCTION.
 - It refines your edits (for example "keep the background" means: do not touch the background even if an input describes one). It never makes you rewrite text that no edit needs.
