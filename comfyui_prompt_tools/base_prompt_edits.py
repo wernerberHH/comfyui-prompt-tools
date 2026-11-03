@@ -29,9 +29,16 @@ Applying the edits
   its position is unknown. An anchor ending inside a replaced span moves to
   the end of that span.
 * An ``insert`` that starts with punctuation (``, text``) is glued to the
-  anchor; otherwise it is joined with a space. At the very end of the prompt
-  an unpunctuated insert is joined with ``", "`` so it does not run into the
-  last word.
+  anchor; otherwise it is joined with a space, so two word characters never
+  touch. At the very end of the prompt an unpunctuated insert is joined with
+  ``", "`` so it does not run into the last word.
+* Closing side, language-independent: if an ``insert`` does not end with a
+  separator (``, ; : . ! ?``) and the next original character after any
+  whitespace is a word or number character, a comma is placed between them
+  (``with <insert>, short bob``) — otherwise a mid-phrase insert runs into the
+  following description. The original whitespace is kept; ``", "`` is only
+  written in full when the original had none. Nothing beyond these two rules
+  touches grammar.
 * Entries of the wrong shape (not an object, ``find`` / ``insert`` missing or
   empty, a non-string value) are skipped (``invalid``).
 """
@@ -45,6 +52,9 @@ from typing import Any, Optional
 
 #: Punctuation that may open an ``insert`` and is then glued to the left side.
 _JOINING_PUNCTUATION = ",;:.!?)"
+
+#: Characters that already close an ``insert`` off from the following text.
+_SEPARATORS = ",;:.!?"
 
 _THINK_BLOCK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 _CODE_FENCE_RE = re.compile(r"```[a-zA-Z0-9_-]*\s*\n?(.*?)```", re.DOTALL)
@@ -231,9 +241,22 @@ def _glue(left: str, insert: str, right: str, at_end: bool) -> str:
         piece = insert
     else:
         piece = " " + insert
-    if right and not right[0].isspace() and right[0] not in _JOINING_PUNCTUATION:
+    following = right.lstrip()
+    if (
+        following
+        and _is_word_char(following[0])
+        and insert[-1] not in _SEPARATORS
+    ):
+        # Mid-phrase insert followed by more description: keep the two apart.
+        piece += "," if right[0].isspace() else ", "
+    elif right and not right[0].isspace() and right[0] not in _JOINING_PUNCTUATION:
         piece += " "
     return left + piece
+
+
+def _is_word_char(char: str) -> bool:
+    """Letter or digit in any script (``str.isalnum``), or an underscore."""
+    return char.isalnum() or char == "_"
 
 
 def _is_text(value: Any) -> bool:

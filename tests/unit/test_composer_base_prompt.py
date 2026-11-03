@@ -181,7 +181,7 @@ class TestKeepVerbatim:
             [{"after": "summer dress", "insert": "and silver earrings"}],
         )
         out, debug, _ = _run(reply, base_prompt=BASE, input_1="bob", input_2="earrings")
-        assert "silver earrings walking" in out
+        assert "silver earrings, walking" in out
         assert (
             "Replaced: 1 | Added: 1 | Skipped: 2 "
             "(not found: 1, overlap: 1, invalid: 0)"

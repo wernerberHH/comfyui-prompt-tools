@@ -161,7 +161,7 @@ class TestDeletions:
 class TestAdditions:
     def test_with_anchor_joins_with_space(self):
         result = apply_edits(PROSE, [], [add("summer dress", "and silver earrings")])
-        assert "yellow summer dress and silver earrings walking" in result.text
+        assert "yellow summer dress and silver earrings, walking" in result.text
         assert result.added == 1
 
     def test_with_anchor_and_leading_comma(self):
@@ -202,7 +202,7 @@ class TestAdditions:
             [rep("long red curly hair", "a short bob")],
             [add("long red curly hair", "and green eyes")],
         )
-        assert result.text.startswith("a woman with a short bob and green eyes in a")
+        assert result.text.startswith("a woman with a short bob and green eyes, in a")
 
     def test_anchor_ending_inside_a_replacement_moves_behind_it(self):
         result = apply_edits(
@@ -210,7 +210,7 @@ class TestAdditions:
             [rep("long red curly hair", "a short bob")],
             [add("long red", "and green eyes")],
         )
-        assert result.text.startswith("a woman with a short bob and green eyes in a")
+        assert result.text.startswith("a woman with a short bob and green eyes, in a")
 
     def test_several_additions_keep_list_order(self):
         result = apply_edits(
@@ -218,9 +218,77 @@ class TestAdditions:
         )
         assert "forest, fog, moss, dawn" in result.text
 
-    def test_addition_before_following_word_gets_a_space(self):
-        result = apply_edits("ab cd", [], [add("ab", "X")])
-        assert result.text == "ab X cd"
+    def test_addition_before_directly_following_word_gets_comma_and_space(self):
+        """No whitespace in the original after the anchor: ", " is written."""
+        result = apply_edits("ab.cd", [], [add("ab.", "X")])
+        assert result.text == "ab. X, cd"
+
+
+class TestInsertSeparators:
+    """The two language-independent joining rules for mid-text additions."""
+
+    def test_mid_phrase_prose_gets_a_comma_before_the_next_word(self):
+        """The case from the live run: anchor ends mid-phrase."""
+        base = "a woman with long red curly hair in a yellow dress"
+        result = apply_edits(
+            base,
+            [rep("long red curly hair", "short platinum blonde bob")],
+            [add("a woman with", "green eyes and light freckles across the nose")],
+        )
+        assert result.text == (
+            "a woman with green eyes and light freckles across the nose, "
+            "short platinum blonde bob in a yellow dress"
+        )
+
+    def test_original_text_outside_the_insertion_is_unchanged(self):
+        base = "a woman with long red curly hair in a yellow dress"
+        result = apply_edits(base, [], [add("a woman with", "green eyes")])
+        head, tail = result.text.split("green eyes,")
+        assert head == "a woman with "
+        assert tail == " long red curly hair in a yellow dress"
+
+    def test_digit_counts_as_word_character(self):
+        result = apply_edits("shot on 35mm film", [], [add("shot on", "a vintage")])
+        assert result.text == "shot on a vintage, 35mm film"
+
+    def test_non_latin_letters_count_as_word_characters(self):
+        result = apply_edits("eine Frau mit Haaren", [], [add("eine Frau mit", "grünen Augen")])
+        assert result.text == "eine Frau mit grünen Augen, Haaren"
+
+    @pytest.mark.parametrize("ending", [",", ";", ":", ".", "!", "?"])
+    def test_insert_ending_with_separator_gets_no_extra_comma(self, ending):
+        result = apply_edits("ab cd", [], [add("ab", f"X{ending}")])
+        assert result.text == f"ab X{ending} cd"
+
+    def test_tag_prompt_after_comma_gets_no_double_separator(self):
+        result = apply_edits(TAGS, [], [add("yellow dress,", "silver earrings,")])
+        assert result.text == (
+            "1girl, red hair, yellow dress, silver earrings, long hair, forest, dawn"
+        )
+
+    def test_tag_insert_before_comma_gets_no_extra_separator(self):
+        """Next original character is a comma, not a word character."""
+        result = apply_edits(TAGS, [], [add("yellow dress", ", silver earrings")])
+        assert ",," not in result.text
+        assert ", ," not in result.text
+        assert "yellow dress, silver earrings, long hair" in result.text
+
+    def test_next_character_not_a_word_character(self):
+        """``<lora:…>`` / ``(weight)`` after the insert: space only, no comma."""
+        result = apply_edits("a cat <lora:x:1>", [], [add("a cat", "with hat")])
+        assert result.text == "a cat with hat <lora:x:1>"
+
+    def test_insert_at_the_end_gets_no_trailing_separator(self):
+        result = apply_edits(PROSE, [], [add("35mm film", "soft grain")])
+        assert result.text == PROSE + " soft grain"
+
+    def test_appended_insert_gets_no_trailing_separator(self):
+        result = apply_edits(PROSE, [], [add("", "soft grain")])
+        assert result.text == PROSE + ", soft grain"
+
+    def test_word_before_word_insert_always_gets_a_space(self):
+        result = apply_edits("abc", [], [add("ab", "X")])
+        assert result.text == "ab X, c"
 
 
 # ---------------------------------------------------------------------------
