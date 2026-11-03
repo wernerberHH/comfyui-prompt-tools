@@ -5,6 +5,26 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **PromptComposer: `base_prompt` with targeted replacement.** Two new
+  optional inputs, appended after `lora_keywords` so saved workflows keep
+  their widget values: `base_prompt` (multiline text) and `base_prompt_rest`
+  (`keep verbatim` / `adapt to output style`). Paste an existing prompt into
+  `base_prompt`; the parts that describe a feature an input covers are
+  replaced by that input, missing features are added, everything else stays.
+  - `keep verbatim` (default): the LLM returns a JSON edit list, the node
+    applies it — untouched text is kept character for character even if the
+    LLM ignores its instructions. Edits that cannot be located or overlap are
+    skipped and counted; an unreadable reply is an `ERROR:`, never a silent
+    rewrite. `output_style` is not used in this mode.
+  - `adapt to output style`: the normal style template plus a base-prompt
+    directive; the whole prompt is phrased in the output style.
+  - `debug_info` reports e.g. `Base prompt: verbatim | Replaced: 2 | Added: 1 | Skipped: 0`.
+  - New template `system_prompts/composer_base_prompt_replace.txt.example`
+    (overridable like every other template; not an output style).
+  - An empty `base_prompt` sends exactly the same request as before.
+
 ## [1.2.0] — 2026-10-25
 
 ### Upgrade notice — read before updating

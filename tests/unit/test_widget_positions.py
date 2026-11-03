@@ -204,7 +204,14 @@ class TestWidgetOrder:
             "user_instruction",
             "output_style",
             "lora_keywords",
+            "base_prompt",
+            "base_prompt_rest",
         ]
+
+    def test_composer_base_prompt_inputs_are_appended_last(self):
+        """``base_prompt`` / ``base_prompt_rest`` (after v1.2.0) must follow
+        ``lora_keywords`` — a saved 7-value composer keeps mapping 1:1."""
+        assert widget_order(PromptComposer)[-2:] == ["base_prompt", "base_prompt_rest"]
 
     def test_prompt_helper_widget_order(self):
         assert widget_order(PromptHelper) == [
@@ -277,6 +284,21 @@ class TestSavedWorkflowMapping:
         assert mapped["output_style"] == "Wan 2.2 motion"
         assert mapped["lora_keywords"] == ""
         assert len(mapped) == len(OLD_COMPOSER_NODE["widgets_values"])
+
+    def test_old_composer_node_has_no_base_prompt_value(self):
+        """A pre-base-prompt node stores nothing for the new inputs, so they
+        take their defaults (empty base prompt = old behaviour)."""
+        mapped = map_saved_values(PromptComposer, OLD_COMPOSER_NODE["widgets_values"])
+        assert "base_prompt" not in mapped
+        assert "base_prompt_rest" not in mapped
+
+    def test_composer_with_lora_keywords_keeps_them(self):
+        """The last stored value must stay in ``lora_keywords`` and not slide
+        into ``base_prompt``."""
+        values = OLD_COMPOSER_NODE["widgets_values"][:-1] + ["lora_a, lora_b"]
+        mapped = map_saved_values(PromptComposer, values)
+        assert mapped["lora_keywords"] == "lora_a, lora_b"
+        assert "base_prompt" not in mapped
 
     @pytest.mark.parametrize(
         "node_cls,node",

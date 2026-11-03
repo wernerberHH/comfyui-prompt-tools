@@ -17,6 +17,9 @@ Claude (via OpenRouter) and Gemini:
   SDXL – Tags, Z-Image – Compact, Wan 2.2 – Motion, LTX-2.3 – Video with Audio,
   SDXL Pony – Photoreal, SDXL Pony – Anime/Illustrious,
   Krea 2 – Natural Language, LTX-2.5 – Multi-Shot Video with Audio.
+  An optional `base_prompt` lets it edit an existing prompt instead: only the
+  features the inputs cover are replaced, the rest is kept verbatim or adapted
+  to the output style (`base_prompt_rest`).
 - **TextMux** — Switches a CLIPTextEncode input between an AI-enhanced source
   and a manual override.
 
@@ -336,6 +339,9 @@ and **five generic input slots**. They are not interchangeable:
 |-------|---------------------|--------------------------------------|
 | `user_instruction` | **Dominant intent.** Decides scene framing, emphasis, mood (image styles) or motion + camera (Wan video style). Wins on conflict. | …the *overall scene idea* — what is being shown, the mood, the motion, the camera, the framing. |
 | `input_1` … `input_5` | **Raw material.** Aspect snippets the composer fuses into the dominant intent; drops snippets that don't fit. | …a *single aspect* — face, hair, body, outfit, background, lighting, composition, etc. |
+| `lora_keywords` | Comma-separated LoRA trigger tokens that must appear verbatim in the output; missing ones are appended. | — |
+| `base_prompt` | **Optional existing prompt to edit.** When set, the parts describing a feature an input covers are replaced by that input, missing features are added, the rest stays. Empty = the composer works as described above. | — (paste a prompt you already have) |
+| `base_prompt_rest` | What happens to the rest of `base_prompt`: `keep verbatim` (default, guaranteed unchanged; `output_style` is not used) or `adapt to output style`. | — |
 
 **Rule of thumb**
 
@@ -357,6 +363,10 @@ it into `user_instruction` and leave the input slots empty. If you have several
 aspect-specific helpers (the classic "pipeline of specialists" pattern),
 each goes into an input slot and you write the `user_instruction` text
 yourself as the connective tissue.
+
+If you already have a finished prompt and only want to swap individual
+features (face, hair, outfit …), paste it into `base_prompt` — see
+[Starting from an existing prompt](docs/composer-workflow-guide.md#starting-from-an-existing-prompt-base_prompt).
 
 ## Testing
 
@@ -380,6 +390,7 @@ comfyui-prompt-tools/
 │   ├── vision_prompts.py             vision-mode loader
 │   ├── config_loader.py              endpoints.yaml reader
 │   ├── post_processing.py            output cleanup
+│   ├── base_prompt_edits.py          composer base prompt: apply LLM edit list
 │   ├── random_pools.py               pool-pick helpers
 │   ├── image_io.py                   tensor → base64 helper
 │   ├── engines/

@@ -170,6 +170,67 @@ This is the recommended replacement for the older
 
 ---
 
+## Starting from an existing prompt (`base_prompt`)
+
+Sometimes the scene is already written — a prompt you found, saved, or tuned
+earlier — and you only want to swap in a different face, hairstyle or outfit.
+Paste that prompt into the composer's `base_prompt` field and wire the
+describe-mode snippets into the inputs as usual. The composer then edits the
+base prompt instead of writing a new one: the parts that describe a feature
+an input covers are replaced by that input, features the base prompt does not
+mention are added, and everything else — scene, light, pose, camera — stays.
+
+`base_prompt_rest` decides what happens to that rest:
+
+| Value | What the LLM does | The rest of the base prompt |
+|---|---|---|
+| `keep verbatim` (default) | Returns a list of targeted edits as JSON; the node applies them | Unchanged, character for character — guaranteed by the node, not just requested from the LLM |
+| `adapt to output style` | Rewrites the whole prompt with the selected `output_style` template | Content kept, wording adapted to the output style |
+
+**Example** (`keep verbatim`):
+
+- `base_prompt`: `a woman with long red curly hair in a yellow summer dress
+  walking through a foggy forest at dawn, 35mm film`
+- `input_1`: ← `Describe Hair` → `short platinum bob`
+
+Result: `a woman with short platinum bob in a yellow summer dress walking
+through a foggy forest at dawn, 35mm film`. `debug_info` reports
+`Base prompt: verbatim | Replaced: 1 | Added: 0 | Skipped: 0`.
+
+The same works for tag prompts: in `masterpiece, 1girl, long red hair,
+curly hair, yellow sundress, sunflower field` a hair input replaces
+`long red hair` and removes `curly hair` together with its comma.
+
+Things to know about `keep verbatim`:
+
+- **`output_style` is not used.** The replacements follow the language and
+  form of the base prompt (tags stay tags, prose stays prose). Use
+  `adapt to output style` when you want the result in a particular style.
+- **`user_instruction` refines the edits**, e.g. `keep the background` stops a
+  background input from replacing the setting.
+- **Edits that cannot be placed are skipped, never guessed.** The LLM has to
+  quote the text it replaces; if the quote is not in the base prompt (the
+  match tolerates only case and extra spaces) or overlaps another edit, it is
+  dropped and counted under `Skipped` in `debug_info`. A feature whose
+  position cannot be found is appended at the end.
+- **An unreadable LLM reply is an error** (`ERROR: unreadable edit list …`),
+  not a silent fallback to a free rewrite. Small models occasionally produce
+  one; run it again or pick a stronger text model.
+- **With no inputs and no `user_instruction`** the base prompt is returned as
+  it is, without an LLM call.
+- `lora_keywords` work in both modes: the tokens are requested from the LLM
+  and any token still missing is appended.
+
+The template behind `keep verbatim` is
+`system_prompts/composer_base_prompt_replace.txt.example` — override it like
+any other template (see [system-prompt-overrides.md](system-prompt-overrides.md)).
+It is not an output style and does not appear in the style list.
+
+An empty `base_prompt` changes nothing: the composer behaves exactly as
+before the field existed.
+
+---
+
 ## Tips
 
 - **Use a fast text LLM in the composer**, even if your describe-modes use a
