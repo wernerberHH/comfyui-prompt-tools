@@ -25,6 +25,8 @@ stays. ``base_prompt_rest`` picks what happens to the rest:
 ``adapt to output style``
     One LLM call with the normal style template plus the "BASE PROMPT mode"
     directive; the LLM writes the whole prompt in the output style.
+    :func:`_remove_back_references` then drops any leftover mention of a
+    replaced feature (", replacing the previous long red hair").
 
 An empty ``base_prompt`` sends exactly the same system prompt and user
 message as before the feature existed.
@@ -32,6 +34,7 @@ message as before the feature existed.
 
 from __future__ import annotations
 
+import re
 import time
 from typing import Optional
 
@@ -280,6 +283,105 @@ def _ensure_verbatim_tokens(
     base = output.rstrip().rstrip(",")
     suffix = ", ".join(missing)
     return f"{base}, {suffix}", missing
+
+
+
+#: Phrases that open a back-reference to a replaced feature, and the words
+#: that mark what follows as the old state. A back-reference is removed only
+#: when it has both — "contrasting with the misty surroundings" stays.
+_BACKREF_INTRO = re.compile(
+    r"\b(?:replacing|contrasting with|instead of|rather than|in place of|"
+    r"unlike|no longer|which replaces)\b",
+    re.IGNORECASE,
+)
+_BACKREF_WORD = re.compile(
+    r"\b(?:previous|previously|former|formerly|original|originally|old|"
+    r"earlier|prior|before)\b",
+    re.IGNORECASE,
+)
+#: ", <intro> ..." up to the sentence end (. ! ? followed by whitespace, a
+#: line break, or the end of the text). No further comma inside: a clause
+#: that is followed by more description is not one that ends the sentence.
+_BACKREF_CLAUSE = re.compile(
+    r",\s*" + _BACKREF_INTRO.pattern + r"[^,\n]*?(?=[.!?]+(?:\s|\Z)|\n|\Z)",
+    re.IGNORECASE,
+)
+#: Words allowed before the intro for a whole sentence to count as nothing
+#: but a back-reference ("Her hair is no longer ...").
+_BACKREF_SENTENCE_MAX_LEAD_WORDS = 3
+
+
+def _sentence_spans(text: str) -> list[tuple[int, int]]:
+    """``(start, end)`` of each sentence; a span keeps its leading whitespace.
+
+    A sentence ends at ``.``, ``!`` or ``?`` followed by whitespace or the end
+    of the text (so "f/1.8" does not split), or at a line break, which is not
+    part of either sentence.
+    """
+    spans: list[tuple[int, int]] = []
+    start = 0
+    for i, char in enumerate(text):
+        if char == "\n":
+            spans.append((start, i))
+            start = i + 1
+        elif char in ".!?" and (i + 1 == len(text) or text[i + 1].isspace()):
+            spans.append((start, i + 1))
+            start = i + 1
+    if start < len(text):
+        spans.append((start, len(text)))
+    return spans
+
+
+def _is_backref_sentence(sentence: str) -> bool:
+    """A sentence that says nothing but how a feature used to be."""
+    intro = _BACKREF_INTRO.search(sentence)
+    if intro is None or "," in sentence or not _BACKREF_WORD.search(sentence):
+        return False
+    return len(sentence[: intro.start()].split()) <= _BACKREF_SENTENCE_MAX_LEAD_WORDS
+
+
+def _remove_back_references(text: str) -> tuple[str, int]:
+    """Remove mentions of replaced features from an ``adapt`` reply.
+
+    The directive forbids them, but compliance is not guaranteed: the model
+    sometimes ends a sentence with ", replacing the previous long red hair"
+    — and the image model then draws the red hair. Removed are
+
+    - a clause that starts with a comma and an intro phrase, contains a
+      back-reference word and runs to the sentence end; the sentence-ending
+      punctuation stays;
+    - a whole sentence (no comma, at most three words before the intro) that
+      contains an intro phrase and a back-reference word.
+
+    Everything else is returned unchanged. Returns ``(text, removed_count)``.
+    """
+    removed = 0
+
+    def _clause(match: re.Match) -> str:
+        nonlocal removed
+        if not _BACKREF_WORD.search(match.group(0)):
+            return match.group(0)
+        removed += 1
+        return ""
+
+    text = _BACKREF_CLAUSE.sub(_clause, text)
+
+    pieces: list[str] = []
+    cursor = 0
+    strip_next = False
+    for start, end in _sentence_spans(text):
+        sentence = text[start:end]
+        pieces.append(text[cursor:start])  # line breaks between spans
+        cursor = end
+        if _is_backref_sentence(sentence):
+            removed += 1
+            # first sentence of a line: the next one loses its leading space
+            strip_next = start == 0 or text[start - 1] == "\n" or strip_next
+            continue
+        pieces.append(sentence.lstrip(" ") if strip_next else sentence)
+        strip_next = False
+    pieces.append(text[cursor:])
+    return "".join(pieces), removed
 
 
 class PromptComposer(BasePromptNode):
@@ -552,6 +654,7 @@ class PromptComposer(BasePromptNode):
             return error
 
         result = strip_llm_noise(reply)
+        result, back_references = _remove_back_references(result)
         result, missing_tokens = _ensure_verbatim_tokens(result, keywords)
 
         debug_info = (
@@ -559,6 +662,8 @@ class PromptComposer(BasePromptNode):
             f"Inputs: {len(inputs)} | Latency: {latency:.1f}s | "
             f"Template: {template_source} | Base prompt: adapted"
         )
+        if back_references:
+            debug_info += f" | Back-references removed: {back_references}"
         if keywords:
             debug_info += (
                 f" | LoRA tokens: {len(keywords)} "

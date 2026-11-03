@@ -208,7 +208,10 @@ jacket and keeps the yellow summer dress. A dress gives way to a new dress
 or to a top plus trousers/skirt; only an input that describes a complete
 outfit replaces the whole outfit. Likewise an eye-colour input does
 not touch the hairstyle. In both modes the LLM is told to describe only the
-final picture and never mention what was replaced.
+final picture and never mention what was replaced. In `adapt to output
+style` the node also removes what slips through — a trailing clause like
+`, replacing the previous long red hair` — and reports it in `debug_info`
+as `Back-references removed: N`.
 
 Things to know about `keep verbatim`:
 

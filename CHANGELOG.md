@@ -30,7 +30,13 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     skipped and counted; an unreadable reply is an `ERROR:`, never a silent
     rewrite. `output_style` is not used in this mode.
   - `adapt to output style`: the normal style template plus a base-prompt
-    directive; the whole prompt is phrased in the output style.
+    directive; the whole prompt is phrased in the output style. A safety net
+    removes what the LLM still writes about replaced features: a trailing
+    clause such as `, replacing the previous long red hair` (comma + intro
+    phrase + a word like `previous`/`original`/`earlier`, up to the sentence
+    end) and short sentences that consist only of such a back-reference.
+    `debug_info` then reports `Back-references removed: N`. Phrases without a
+    back-reference word (`contrasting with the misty surroundings`) stay.
   - `debug_info` reports e.g. `Base prompt: verbatim | Replaced: 2 | Added: 1 | Skipped: 0`.
   - New template `system_prompts/composer_base_prompt_replace.txt.example`
     (overridable like every other template; not an output style).
